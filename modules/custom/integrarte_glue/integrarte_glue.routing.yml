@@ -1,0 +1,6 @@
+integrarte_glue.start:
+    path: /custom/start
+    defaults:
+        _controller: '\Drupal\integrarte_glue\Controller\IntegrarteGlueStartController::startAction'
+    requirements:
+        _permission: 'access content'

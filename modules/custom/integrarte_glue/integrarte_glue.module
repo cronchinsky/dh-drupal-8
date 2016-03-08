@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * integrarte_glue.module
+ */
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function integrarte_glue_form_alter(&$form, &$form_state, $form_id) {
+ //dpm($form);
+ //dpm($form_id);
+ if ($form_id == 'node_application_form') {
+   //dpm($form['field_online_video']);
+   $form['field_online_video']['widget'][0]['#markup'] = $form['field_online_video']['widget'][0]['#description'];   																			
+ }
+}
+
+
+function integrarte_glue_node_presave(EntityInterface $node) {
+    //dpm($node->toArray());
+    if ($node->type->target_id == 'application') {
+	    $node->title->value = $node->field_first_name->value . ' ' . $node->field_last_name->value;
+    }
+}

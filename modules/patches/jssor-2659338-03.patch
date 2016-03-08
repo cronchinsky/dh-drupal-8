@@ -1,0 +1,34 @@
+diff --git a/src/Plugin/views/row/Jssor.php b/src/Plugin/views/row/Jssor.php
+index ef91e54..1e11070 100644
+--- a/src/Plugin/views/row/Jssor.php
++++ b/src/Plugin/views/row/Jssor.php
+@@ -244,12 +244,12 @@ class Jssor extends RowPluginBase {
+ 
+     $form['play_out_mode'] = [
+       '#type' => 'select',
+-      '#title' => $this->t('Play in mode'),
+-      '#description' => $this->t('Specifies how captions will play in.'),
++      '#title' => $this->t('Play out mode'),
++      '#description' => $this->t('Specifies how captions will play out.'),
+       '#options' => [
+         0 => $this->t('No play'),
+-        1 => $this->t('Goes after main slide played in, play captions in one by one'),
+-        3 => $this->t('Goes after main slide played in, play all captions in parallelly'),
++        1 => $this->t('Goes after main slide played out, play captions in one by one'),
++        3 => $this->t('Goes after main slide played out, play all captions in parallelly'),
+       ],
+       '#default_value' => $this->options['play_out_mode'],
+     ];
+diff --git a/src/Plugin/views/style/Jssor.php b/src/Plugin/views/style/Jssor.php
+index 7bd569e..e867ad3 100755
+--- a/src/Plugin/views/style/Jssor.php
++++ b/src/Plugin/views/style/Jssor.php
+@@ -228,7 +228,7 @@ class Jssor extends StylePluginBase {
+     $form['autoplay']['transition'] = [
+       '#type' => 'select',
+       '#title' => $this->t('Transition'),
+-      '#description' => t('Whether to pause when mouse over if a slider is auto playing.'),
++      '#description' => t('Transitions.'),
+       '#default_value' => (isset($this->options['autoplay']['transition'])) ?
+         $this->options['autoplay']['transition'] : $this->options['transition'],
+       '#options' => [

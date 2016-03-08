@@ -28,10 +28,10 @@
         "merge-plugin": {
             "include": [
                 "core/composer.json",
-                "sites/integrarteusa.com/modules/contrib/address/composer.json",
-                "sites/integrarteusa.com/modules/contrib/devel/webprofiler/composer.json",
-                "sites/integrarteusa.com/modules/contrib/mollom/composer.json",
-                "sites/integrarteusa.com/modules/contrib/pathauto/composer.json"
+                "modules/contrib/address/composer.json",
+                "modules/contrib/devel/webprofiler/composer.json",
+                "modules/contrib/mollom/composer.json",
+                "modules/contrib/pathauto/composer.json"
             ],
             "recurse": false,
             "replace": false,
@@ -41,7 +41,7 @@
     "autoload": {
         "psr-4": {
             "Drupal\\Core\\Composer\\": "core/lib/Drupal/Core/Composer",
-            "Drupal\\composer_manager\\Composer\\": "modules/composer_manager/src/Composer"
+            "Drupal\\composer_manager\\Composer\\": "modules/contrib/composer_manager/src/Composer"
         }
     },
     "scripts": {

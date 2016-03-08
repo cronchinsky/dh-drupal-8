@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="rules">
+  <description>Default PHP CodeSniffer configuration for Rules.</description>
+  <file>.</file>
+
+  <!-- Exclude generated code files. -->
+  <exclude-pattern>src/ProxyClass/ParamConverter/RulesTempConverter.php</exclude-pattern>
+
+  <arg name="extensions" value="inc,install,module,php,profile,test,theme,yml"/>
+
+  <!--Blacklist of coding standard rules that are not yet fixed. -->
+  <rule ref="Drupal">
+    <exclude name="Drupal.Commenting.DocComment.MissingShort"/>
+    <exclude name="Drupal.Commenting.FunctionComment.EmptyThrows"/>
+    <exclude name="Drupal.Commenting.FunctionComment.IncorrectTypeHint"/>
+    <exclude name="Drupal.Commenting.FunctionComment.MissingReturnComment"/>
+    <exclude name="Drupal.Commenting.FunctionComment.$InReturnType"/>
+    <exclude name="Drupal.NamingConventions.ValidVariableName.LowerCamelName"/>
+  </rule>
+
+  <!-- We always want short array syntax only. -->
+  <rule ref="Generic.Arrays.DisallowLongArraySyntax" />
+</ruleset>

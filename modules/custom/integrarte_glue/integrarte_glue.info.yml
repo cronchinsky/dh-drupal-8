@@ -1,0 +1,6 @@
+name: 'Integrarte Glue'
+dependencies: {  }
+description: 'Integrarte glue code'
+core: 8.x
+package: Custom
+type: module

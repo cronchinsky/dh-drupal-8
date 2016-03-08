@@ -1,0 +1,109 @@
+diff --git a/superfish.libraries.yml b/superfish.libraries.yml
+index bbcdf7c..5742afe 100644
+--- a/superfish.libraries.yml
++++ b/superfish.libraries.yml
+@@ -15,52 +15,52 @@ superfish:
+ init:
+   version: VERSION
+   js:
+-    ../../sites/all/libraries/superfish/superfish.js: {}
++    /sites/all/libraries/superfish/superfish.js: {}
+   css:
+     base:
+-      ../../sites/all/libraries/superfish/css/superfish.css: {}
++      /sites/all/libraries/superfish/css/superfish.css: {}
+   dependencies:
+     - core/jquery
+ 
+ superfish_hoverintent:
+   version: VERSION
+   js:
+-    ../../sites/all/libraries/superfish/jquery.hoverIntent.minified.js: { minified: true }
++    /sites/all/libraries/superfish/jquery.hoverIntent.minified.js: { minified: true }
+   dependencies:
+     - superfish/init
+ 
+ superfish_smallscreen:
+   version: VERSION
+   js:
+-    ../../sites/all/libraries/superfish/sfsmallscreen.js: {}
++    /sites/all/libraries/superfish/sfsmallscreen.js: {}
+   dependencies:
+     - superfish/init
+ 
+ superfish_touchscreen:
+   version: VERSION
+   js:
+-    ../../sites/all/libraries/superfish/sftouchscreen.js: {}
++    /sites/all/libraries/superfish/sftouchscreen.js: {}
+   dependencies:
+     - superfish/init
+ 
+ superfish_supersubs:
+   version: VERSION
+   js:
+-    ../../sites/all/libraries/superfish/supersubs.js: {}
++    /sites/all/libraries/superfish/supersubs.js: {}
+   dependencies:
+     - superfish/init
+ 
+ superfish_supposition:
+   version: VERSION
+   js:
+-    ../../sites/all/libraries/superfish/supposition.js: {}
++    /sites/all/libraries/superfish/supposition.js: {}
+   dependencies:
+     - superfish/init
+ 
+ superfish_easing:
+   version: VERSION
+   js:
+-    ../../sites/all/libraries/easing/jquery.easing.js: {}
++    /sites/all/libraries/easing/jquery.easing.js: {}
+   dependencies:
+     - superfish/init
+ 
+@@ -68,7 +68,7 @@ superfish_style_black:
+   version: VERSION
+   css:
+     theme:
+-      ../../sites/all/libraries/superfish/style/black/black.css: {}
++      /sites/all/libraries/superfish/style/black/black.css: {}
+   dependencies:
+     - superfish/init
+ 
+@@ -76,7 +76,7 @@ superfish_style_blue:
+   version: VERSION
+   css:
+     theme:
+-      ../../sites/all/libraries/superfish/style/blue/blue.css: {}
++      /sites/all/libraries/superfish/style/blue/blue.css: {}
+   dependencies:
+     - superfish/init
+ 
+@@ -84,7 +84,7 @@ superfish_style_coffee:
+   version: VERSION
+   css:
+     theme:
+-      ../../sites/all/libraries/superfish/style/coffee/coffee.css: {}
++      /sites/all/libraries/superfish/style/coffee/coffee.css: {}
+   dependencies:
+     - superfish/init
+ 
+@@ -92,7 +92,7 @@ superfish_style_default:
+   version: VERSION
+   css:
+     theme:
+-      ../../sites/all/libraries/superfish/style/default/default.css: {}
++      /sites/all/libraries/superfish/style/default/default.css: {}
+   dependencies:
+     - superfish/init
+ 
+@@ -100,6 +100,6 @@ superfish_style_white:
+   version: VERSION
+   css:
+     theme:
+-      ../../sites/all/libraries/superfish/style/white/white.css: {}
++      /sites/all/libraries/superfish/style/white/white.css: {}
+   dependencies:
+     - superfish/init
