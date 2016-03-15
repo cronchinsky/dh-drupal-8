@@ -1,0 +1,5 @@
+# Custom integrarte permissions.
+anonymous only:
+  title: 'Anonymous users only'
+  description: 'Content for anonymous users only'
+  restrict access: FALSE

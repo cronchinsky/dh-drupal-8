@@ -54,7 +54,7 @@ textarea {
 
 /*----- start:Form style -----*/
 
-.form-actions .form-submit,button,input[type ="submit"] {
+.form-actions .form-submit,button,input[type ="submit"], .button {
   display: inline-block;
   margin-bottom: 0;
   font-weight: 400;
@@ -77,7 +77,7 @@ textarea {
   margin:10px;
 
 }
-.form-actions .form-submit:hover, .form-actions .form-submit:focus,button:hover,button:focus {
+.form-actions .form-submit:hover, .form-actions .form-submit:focus,button:hover,button:focus, .button:hover, .button:focus {
   background-color: #555;
   color:#fff;
 }
@@ -593,7 +593,8 @@ h3.tagline {
 
 /* application form */
 
-form h4.label {
+form h4.label,
+.path-user .label {
 	font-family: "Open Sans",Helvetica,Arial,sans-serif;
   font-size: 14px !important;
   color: #333;
@@ -601,30 +602,77 @@ form h4.label {
   padding: 0;
 }
 
-.collapse-processed > summary:before {
+.path-user .collapse-processed > summary:before,
+.path-node .collapse-processed > summary:before {
 	background: none;
 }
 
-.field--name-field-address details,
-details#application-phone {
+
+#application-contact details {
 	border: none;
-}
-
-.field--name-field-address details .details-wrapper,
-details#application-phone .details-wrapper {
-	padding-left: 0;
-}
-
-.field--name-field-address details > summary,
-details#application-phone  > summary{
-	padding-left: 0;
-	margin-left: -10px;
+	margin-top: 0;
 }
 
 .field--type-telephone input {
 	display: block;
 }
+
+.details-title {
+	font-weight: bold;
+}
+
+
+#mollom-captcha {
+	max-width: 600px; 
+}
+
+#wrapper #mollom-captcha img {
+	margin-left: 0;
+}
+
+input[id^="edit-mollom-captcha-refresh"].mollom-refresh-captcha,
+input[id^="edit-mollom-captcha-refresh"].mollom-refresh-captcha:hover {
+	float: left;
+	position: relative;
+}
+
+input[type="submit"].mollom-switch-captcha {
+	background-color: white;
+	color: #333;
+}
+
+input[type="submit"].mollom-switch-captcha:hover {
+	background-color: white;
+	color: #333;
+	text-decoration: underline;
+}
+
+.mollom-captcha-instructions {
+	line-height: 1.1;
+}
+
+#user-register-form .mollom-captcha-content {
+	float: left;
+	padding-left: 0;
+	padding-right: 20px;
+}
  
+input[id^="edit-mollom-captcha-captcha-input"] {
+	width: 200px;
+}
+
+.node__content a {
+	color: #890000;
+}
+
+.node__content ul {
+	list-style: disc;
+}
+
+.node__content ul li {
+	margin-left: 20px;
+}
+
 @media (min-width: 768px) {
     .dropdown:hover .dropdown-menu {
         display: block;

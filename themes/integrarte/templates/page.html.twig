@@ -121,13 +121,7 @@
 	<div id="wrapper">
 	  <!-- start: Container -->
 	  <div class="container">
-	    <!---Start:highlighted -->
-	      {% if page.highlighted %}
-	        <div class="jumbotron">
-	          {{ page.highlighted }}
-	        </div>
-	      {% endif %}
-	    <!---End:highlighted -->
+
 	
 	    <!---Start:content top -->
 	      {% if page.content_top %}
@@ -178,6 +172,13 @@
 	      </div>
 	    {% endif %}
 	    <!-- End:Content Bottom -->
+	    <!---Start:highlighted -->
+	      {% if page.highlighted %}
+	        <div class="jumbotron">
+	          {{ page.highlighted }}
+	        </div>
+	      {% endif %}
+	    <!---End:highlighted -->
 	  </div>
 	</div>
 	<!--- End:layout -->

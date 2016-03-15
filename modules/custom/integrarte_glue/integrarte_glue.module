@@ -14,14 +14,28 @@ function integrarte_glue_form_alter(&$form, &$form_state, $form_id) {
  //dpm($form_id);
  if ($form_id == 'node_application_form') {
    //dpm($form['field_online_video']);
-   $form['field_online_video']['widget'][0]['#markup'] = $form['field_online_video']['widget'][0]['#description'];   																			
+   $form['field_online_video']['widget'][0]['#markup'] = $form['field_online_video']['widget'][0]['#description'];
+   $form['actions']['submit']['#submit'][] = 'integrarte_glue_application_submit';  																			
  }
+ 
+ if ($form_id == 'profile_main_edit_form') {
+ 	//dpm('personal information form');
+ }
+
 }
 
+function integrarte_glue_application_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+    //drupal_set_message('we sent a form woohoo');
+    $form_state->setRedirect('integrarte_glue.application_submitted');
+}
 
 function integrarte_glue_node_presave(EntityInterface $node) {
     //dpm($node->toArray());
     if ($node->type->target_id == 'application') {
-	    $node->title->value = $node->field_first_name->value . ' ' . $node->field_last_name->value;
+      // Load the current user.
+			$user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+			//dpm($user->toArray());
+			$name = $user->get('name')->value;
+	    $node->title->value = 'Summer Application: ' . $name;
     }
 }

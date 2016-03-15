@@ -248,7 +248,7 @@ color: white!important;
 }
 .dropdown-menu .active>a:hover {
   /* color: white!important; */
-  background: #29a9df!important;
+  background: #890000!important;
 }
 .navbar .btn-navbar {
   margin-top: 15px;
@@ -753,13 +753,13 @@ input[type="button"]:hover {
 }
 .button.color {
   color: white;
-  background: #29a9df;
+  background: #890000;
 }
 .button.color:hover {
   background: #aaa;
 }
 input[type="button"] {
-  background: #29a9df;
+  background: #890000;
   color: white;
 }
 .alert {
@@ -1414,8 +1414,8 @@ a.buy:hover {
   margin-right: 5px;
 }
 li.current {
-  background: #29a9df;
-  border: 1px solid #29a9df;
+  background: #890000;
+  border: 1px solid #890000;
   color: white;
 }
 .widget {
@@ -1449,11 +1449,19 @@ li.current {
 .tags a:last-child,.tabs li a:last-child {
   margin-right: 0;
 }
-.tags a:hover,.tabs li a:hover,.tabs .is-active a {
-  background: #29a9df;
-  border: 1px solid #29a9df;
+.tags a:hover,.tabs li a:hover {
+  background: #666;
+  border: 1px solid #666;
   color: white;
 }
+
+.tabs .is-active a {
+  background: #890000;
+  border: 1px solid #890000;
+  color: white;
+}
+
+
 .isotope-item {
   z-index: 2;
 }
@@ -1663,8 +1671,8 @@ li.current {
   background: #fcfcfc url(../images/bg-k20.png) repeat;
   border-top: 4px solid #f6f6f6;
   border-bottom: 4px solid #f6f6f6;
-  margin-top: 20px;
-  line-height: 56px;
+  /* margin-top: 20px; */
+  line-height: 36px;
 }
 #footer-menu #footer-menu-logo {
   height: 40px;
@@ -1681,7 +1689,7 @@ li.current {
 }
 #footer-menu #footer-menu-links {
   display: block;
-  float: left;
+  float: right;
 }
 #footer-menu #footer-menu-links ul {
   list-style: disc;
@@ -1704,8 +1712,8 @@ li.current {
   display: inline-block;
   color: #666;
   text-decoration: none;
-  font-size: 12px;
-  font-family: 'Droid Sans';
+  font-size: 16px;
+  /* font-family: 'Droid Sans'; */
   text-transform: lowercase;
   -webkit-transition: all .3s ease-in-out;
   -moz-transition: all .3s ease-in-out;
@@ -1722,7 +1730,7 @@ li.current {
   width: 30px;
   height: 30px;
   display: block;
-  background-color: #29a9df;
+  background-color: #890000;
   background-image: url(../images/scroll-top-top.png);
   background-repeat: no-repeat;
   background-position: 50%;

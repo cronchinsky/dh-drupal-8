@@ -3,4 +3,11 @@ integrarte_glue.start:
     defaults:
         _controller: '\Drupal\integrarte_glue\Controller\IntegrarteGlueStartController::startAction'
     requirements:
+        _permission: 'anonymous only'
+integrarte_glue.application_submitted:
+    path: /thank-you
+    defaults:
+        _entity_view: 'page.full'
+    requirements:
         _permission: 'access content'
+        
