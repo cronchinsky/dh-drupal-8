@@ -10,12 +10,14 @@ use Drupal\Core\Entity\EntityInterface;
  * Implements hook_form_alter().
  */
 function integrarte_glue_form_alter(&$form, &$form_state, $form_id) {
- //dpm($form);
+ dpm($form);
  //dpm($form_id);
  if ($form_id == 'node_application_form') {
    //dpm($form['field_online_video']);
    $form['field_online_video']['widget'][0]['#markup'] = $form['field_online_video']['widget'][0]['#description'];
-   $form['actions']['submit']['#submit'][] = 'integrarte_glue_application_submit';  																			
+   $form['actions']['submit']['#submit'][] = 'integrarte_glue_application_submit'; 
+   $form['actions']['submit']['#value'] = t('Submit application'); 	
+   																		
  }
  
  if ($form_id == 'profile_main_edit_form') {
