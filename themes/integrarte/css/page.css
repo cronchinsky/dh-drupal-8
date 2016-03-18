@@ -27,7 +27,7 @@ textarea {
   height: auto;
   max-width: 100%;
   max-height: 458px;
-  margin-left: 8%;
+  /* margin-left: 8%; */
 }
 .content_top_button {
   padding: 10px 25px !important;
@@ -86,12 +86,17 @@ textarea {
 
 
 /*----- Start:layout style -----*/
+div.field {
+	margin-bottom: 10px;
+}
 
 .field__label {
-  font-size: 18px;
-  line-height: 32px;
-  font-family: "Droid Sans"!important;
+  font-size: 14px;
+  /* line-height: 32px;
+  
+font-family: "Droid Sans"!important;
   font-weight: normal!important;
+*/
   color: #666;
   margin: 0;
   padding: 0;
@@ -105,6 +110,7 @@ border-bottom: 6px double #f6f6f6;
   padding: 5px 10px 10px 10px;
 
 }
+/*
 .field--type-link .field__item a {
   padding: 9px 12px;
   display: inline-block;
@@ -124,6 +130,7 @@ border-bottom: 6px double #f6f6f6;
 .field--type-link .field__item a:hover {
   background-color: #aaa;
 }
+*/
 .tabs {
   margin-top: 20px;
 }
