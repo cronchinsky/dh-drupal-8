@@ -34,10 +34,11 @@ function integrarte_glue_application_submit(&$form, \Drupal\Core\Form\FormStateI
 function integrarte_glue_node_presave(EntityInterface $node) {
     //dpm($node->toArray());
     if ($node->type->target_id == 'application') {
-      // Load the current user.
-			$user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-			//dpm($user->toArray());
-			$name = $user->get('name')->value;
+    	//dpm($user->toArray());
+			// get the author's username
+			$author_uid = $node->uid->target_id;
+			$account = \Drupal\user\Entity\User::load($author_uid); // pass your uid
+			$name = $account->getUsername();
 	    $node->title->value = 'Summer Application: ' . $name;
     }
 }
