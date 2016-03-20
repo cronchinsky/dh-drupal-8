@@ -613,7 +613,7 @@ form h4.label,
 
 .path-user .collapse-processed > summary:before,
 .path-node .collapse-processed > summary:before {
-	background: none;
+	/* background: none; */
 }
 
 
