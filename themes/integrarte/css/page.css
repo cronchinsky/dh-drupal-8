@@ -332,9 +332,9 @@ table {
   width: 100% !important;
 }
 table{
-  font: normal 12px/150% Arial, Helvetica, sans-serif;
+  font: normal 16px/150% Arial, Helvetica, sans-serif;
   background: #fff; overflow: hidden;
-  border: 2px solid red !important;
+  border: 2px solid grey !important;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
@@ -343,12 +343,14 @@ table td,table th {
   padding: 8px 10px !important;
 }
 table thead th {
-  background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #006699), color-stop(1, #00557F) );
+  /*
+background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #006699), color-stop(1, #00557F) );
   background:-moz-linear-gradient( center top, #006699 5%, #00557F 100% );
   filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#006699', endColorstr='#00557F');
-  background-color:#006699 !important;
+*/
+  background-color:#666 !important;
   color:#FFFFFF;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: bold;
   border-left: 1px solid #0070A8;
   padding:10px !important;
@@ -363,7 +365,7 @@ th, td {
   border:1px solid #777;
 }
 table tr:nth-child(even) {
-  background-color:#E1EEF4;
+  background-color:rgba(238, 238, 238, 0.36);
 }
 table tr:nth-child(odd) {
   background-color:rgba(238, 238, 238, 0.36);
@@ -373,11 +375,11 @@ table th	{
   color: white;
 }
 table tr:hover,table tr:hover a {
-  background:#006699;
-  color:white;
+  background:#eee;
+  /* color:white; */
 }
 table a:hover {
-  color:white !important;
+  /* color:white !important; */
 }
 #search-block-form input {
   margin-bottom: 15px;
@@ -520,14 +522,14 @@ body {  }
 
 /* front page slider */
 
-.views-field-title {
+.view-front-slideshow .views-field-title {
     position: absolute;
     top: 100px;
     left: 100px;
     width: 450px; 
     
 }
-.views-field-title a {
+.view-front-slideshow .views-field-title a {
   font-family: 'Vesper Libre', serif;
   font-weight: normal !important;
   color: white;
@@ -537,12 +539,12 @@ body {  }
   text-transform: uppercase;
 }
 
-.views-field-title a:hover {
+.view-front-slideshow .views-field-title a:hover {
 	text-decoration: none;
 	color: white;
 }
 
-.views-field-field-more-info a {
+.view-front-slideshow .views-field-field-more-info a {
   position: absolute;
   bottom: 150px;
   left: 200px;
@@ -557,12 +559,12 @@ body {  }
   text-decoration: none;
 }
 
-.views-field-field-more-info a:hover {
+.view-front-slideshow .views-field-field-more-info a:hover {
   color: #6e0000;
   text-decoration: none;
 }
 
-.views-field-field-credits {
+.view-front-slideshow .views-field-field-credits {
   position: absolute;
   bottom: 10px;
   right: 25px;
