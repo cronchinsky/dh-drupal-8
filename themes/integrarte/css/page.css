@@ -682,6 +682,25 @@ input[id^="edit-mollom-captcha-captcha-input"] {
 	margin-left: 20px;
 }
 
+/* video block */
+
+#block-integrarteopenclass .field--name-field-video {
+	padding: 20px 20px 20px 0;
+  float: left;
+}
+
+#block-integrarteopenclass .field--name-body {
+	text-align: center;
+	padding-top: 100px;
+}
+
+#block-integrarteopenclass .field--name-body h3 {
+	font-size: 28px !important;
+	line-height: 28px !important;
+	text-align: center;	
+	margin: 10px 0 40px 0 !important;
+}
+
 @media (min-width: 768px) {
     .dropdown:hover .dropdown-menu {
         display: block;
