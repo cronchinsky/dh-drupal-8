@@ -390,6 +390,8 @@ table a:hover {
 }
 .site-logo {
   display: inline-block;
+  max-width: 75%;
+  height: auto !important;
 }
 .site-name a {
   color: #ddd;
@@ -684,9 +686,33 @@ input[id^="edit-mollom-captcha-captcha-input"] {
 
 /* video block */
 
+#block-integrarteopenclass {
+	padding-top: 20px;
+}
+
 #block-integrarteopenclass .field--name-field-video {
 	padding: 20px 20px 20px 0;
   float: left;
+}
+
+@media (max-width: 768px) {
+	#block-integrarteopenclass .field--name-field-video {
+	  float: none;
+	  position: relative;
+		padding-bottom: 56.25%; 
+		padding-top: 25px;
+		height: 0;
+	}
+}
+
+@media (max-width: 768px) {
+	#block-integrarteopenclass .field--name-field-video iframe {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+	}
 }
 
 #block-integrarteopenclass .field--name-body {
@@ -694,9 +720,17 @@ input[id^="edit-mollom-captcha-captcha-input"] {
 	padding-top: 100px;
 }
 
+@media (max-width: 768px) {
+	#block-integrarteopenclass .field--name-body {
+		text-align: center;
+		padding-top: 20px;
+	}
+}
+
+
 #block-integrarteopenclass .field--name-body h3 {
 	font-size: 28px !important;
-	line-height: 28px !important;
+	line-height: 32px !important;
 	text-align: center;	
 	margin: 10px 0 40px 0 !important;
 }
