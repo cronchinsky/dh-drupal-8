@@ -20,6 +20,12 @@ function integrarte_glue_form_alter(&$form, &$form_state, $form_id) {
    																		
  }
  
+  if ($form_id == 'node_registration_form') {
+   $form['actions']['submit']['#submit'][] = 'integrarte_glue_registration_submit'; 
+   $form['actions']['submit']['#value'] = t('Submit registration'); 	
+   																		
+ }
+ 
  if ($form_id == 'profile_main_edit_form') {
  	//dpm('personal information form');
  }
@@ -31,6 +37,11 @@ function integrarte_glue_application_submit(&$form, \Drupal\Core\Form\FormStateI
     $form_state->setRedirect('integrarte_glue.application_submitted');
 }
 
+function integrarte_glue_registration_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+    //drupal_set_message('we sent a form woohoo');
+    $form_state->setRedirect('integrarte_glue.registration_submitted');
+}
+
 function integrarte_glue_node_presave(EntityInterface $node) {
     //dpm($node->toArray());
     if ($node->type->target_id == 'application') {
@@ -40,5 +51,14 @@ function integrarte_glue_node_presave(EntityInterface $node) {
 			$account = \Drupal\user\Entity\User::load($author_uid); // pass your uid
 			$name = $account->getUsername();
 	    $node->title->value = 'Summer Application: ' . $name;
+    }
+    
+    if ($node->type->target_id == 'registration') {
+    	//dpm($user->toArray());
+			// get the author's username
+			$author_uid = $node->uid->target_id;
+			$account = \Drupal\user\Entity\User::load($author_uid); // pass your uid
+			$name = $account->getUsername();
+	    $node->title->value = 'Summer Registration: ' . $name;
     }
 }

@@ -390,8 +390,10 @@ table a:hover {
 }
 .site-logo {
   display: inline-block;
+/*
   max-width: 75%;
   height: auto !important;
+*/
 }
 .site-name a {
   color: #ddd;
@@ -632,6 +634,9 @@ form h4.label,
 	font-weight: bold;
 }
 
+.fieldset-legend {
+	font-size: 16px;
+}
 
 #mollom-captcha {
 	max-width: 600px; 
@@ -672,16 +677,20 @@ input[id^="edit-mollom-captcha-captcha-input"] {
 	width: 200px;
 }
 
-.node__content a {
+.node__content a,
+li a,
+#block-integrarte-help a {
 	color: #890000;
 }
 
-.node__content ul {
+.node__content ul,
+#block-releaseforms ul {
 	list-style: disc;
 }
 
-.node__content ul li {
-	margin-left: 20px;
+.node__content ul li,
+#block-releaseforms ul li {
+	margin-left: 30px;
 }
 
 /* video block */

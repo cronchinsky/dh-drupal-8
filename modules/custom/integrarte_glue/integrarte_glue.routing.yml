@@ -10,4 +10,10 @@ integrarte_glue.application_submitted:
         _entity_view: 'page.full'
     requirements:
         _permission: 'access content'
+integrarte_glue.registration_submitted:
+    path: /thank-you-registration
+    defaults:
+        _entity_view: 'page.full'
+    requirements:
+        _permission: 'access content'
         
