@@ -1747,7 +1747,7 @@ li.current {
   background-color: #444444;
   /* border-bottom: 4px solid #f6f6f6; */
   color: white!important;
-  padding: 40px 0;
+  padding: 10px 0;
   z-index: 1;
   position: relative;
   opacity: 1;
@@ -1819,6 +1819,16 @@ form#newsletter button {
   text-align: center;
   /* color: #ccaa55; */
   color: white;
+}
+
+a.facebook-icon {
+	width: 29px;
+	height: 29px;
+	display: inline-block;
+	background: url("../images/FB-f-Logo__white_29.png");
+	background-position: 0 0;
+	background-color: transparent;
+	text-indent: -9999px;
 }
 
 .links-list, .links-list-alt {

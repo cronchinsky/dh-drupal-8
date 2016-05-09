@@ -55,8 +55,8 @@ function integrarte_preprocess_page(&$variables) {
     $variables['sidebarsecond'] = 'col-sm-3';
   }
   elseif (!empty($variables['page']['sidebar_first'])) {
-    $variables['contentlayout'] = 'col-sm-8 ';
-    $variables['sidebarfirst'] = 'col-sm-4';
+    $variables['contentlayout'] = 'col-sm-6 ';
+    $variables['sidebarfirst'] = 'col-sm-6';
   }
   elseif (!empty($variables['page']['sidebar_second'])) {
     $variables['contentlayout'] = 'col-sm-8';

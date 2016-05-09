@@ -574,7 +574,7 @@ body {  }
   right: 25px;
   font-family: Arial;
   color: black;
-  font-size: 10px;
+  font-size: 14px;
 }
 
 
@@ -704,8 +704,14 @@ li a,
   float: left;
 }
 
+#block-summerprogram2016video .field--name-field-video iframe {
+	margin: 30px auto;
+	display: block;
+}
+
 @media (max-width: 768px) {
-	#block-integrarteopenclass .field--name-field-video {
+	#block-integrarteopenclass .field--name-field-video,
+	#block-summerprogram2016video .field--name-field-video {
 	  float: none;
 	  position: relative;
 		padding-bottom: 56.25%; 
@@ -715,7 +721,8 @@ li a,
 }
 
 @media (max-width: 768px) {
-	#block-integrarteopenclass .field--name-field-video iframe {
+	#block-integrarteopenclass .field--name-field-video iframe,
+	#block-summerprogram2016video .field--name-field-video iframe {
 		position: absolute;
 		top: 0;
 		left: 0;
