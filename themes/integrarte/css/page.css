@@ -588,7 +588,7 @@ body {  }
 	font-size: 22px;
 }
 
-#block-homepagesummerprogram a {
+#block-homepagesummerprogram a.learn-more {
 	font-size: 16px;
 }
 
@@ -756,3 +756,34 @@ li a,
         display: block;
     }
  }
+ 
+ 
+ /* bio page */
+ 
+#wrapper .field--name-field-bio-photo img {
+	 float: left;
+	 max-width: 100%;
+	 max-height: 100%;
+	 margin-right: 35px;
+	 margin-bottom: 20px;
+}
+ 
+@media (max-width: 768px) {
+	#wrapper .field--name-field-bio-photo img {
+	  float: none;
+	  display: block;
+	  margin:0 auto 20px !important;
+	}
+}
+
+/*
+@media (max-width: 768px) {
+	#wrapper .field--name-field-bio-photo img {
+		position: absolute;
+		top: 0;
+		left: 0;
+		max-width: 100%;
+		height: auto;
+	}
+}
+*/
