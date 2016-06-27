@@ -776,6 +776,18 @@ li a,
 	}
 }
 
+/* faculty view */
+
+.view-integrarte-faculty img {
+	width: auto;
+	float: left;
+	margin-right: 45px;
+	margin-bottom: 25px;
+}
+
+.view-integrarte-faculty h2 {
+	margin-top: 0;
+}
 /*
 @media (max-width: 768px) {
 	#wrapper .field--name-field-bio-photo img {
