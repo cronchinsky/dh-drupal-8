@@ -776,6 +776,17 @@ li a,
 	}
 }
 
+/* facility page */
+#studio-1 {
+       float: right;
+       margin-left: 15px;
+}
+
+#studio-1 p {
+       font-style: bold;
+       text-align: center;
+}
+
 /* faculty view */
 
 .view-integrarte-faculty img {
