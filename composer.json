@@ -12,6 +12,7 @@
         "drupal/address": "8.*",
         "drupal/csv_serialization": "8.*",
         "drupal/webprofiler": "8.*",
+        "drupal/entity": "8.*",
         "mollom": "8.*",
         "drupal/pathauto": "8.*"
     },
@@ -32,6 +33,7 @@
                 "modules/contrib/address/composer.json",
                 "modules/contrib/csv_serialization/composer.json",
                 "modules/contrib/devel/webprofiler/composer.json",
+                "modules/contrib/entity/composer.json",
                 "modules/contrib/mollom/composer.json",
                 "modules/contrib/pathauto/composer.json"
             ],
@@ -59,10 +61,5 @@
             "type": "composer",
             "url": "https://packagist.drupal-composer.org"
         }
-    ],
-    "require-dev": {
-        "behat/behat": "dev-master",
-        "behat/mink": "dev-master",
-        "behat/mink-extension": "dev-master"
-    }
+    ]
 }
