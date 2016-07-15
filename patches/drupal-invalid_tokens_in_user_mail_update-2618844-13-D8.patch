@@ -1,0 +1,21 @@
+diff --git a/core/modules/user/user.install b/core/modules/user/user.install
+index 91a908e..fef3c0c 100644
+--- a/core/modules/user/user.install
++++ b/core/modules/user/user.install
+@@ -85,3 +85,16 @@ function user_install() {
+     ))
+     ->save();
+ }
++
++/**
++ * Implements hook_update().
++ */
++function user_update_8001(){
++  // Fix for an invalid token in default config.
++  $mail_config = \Drupal::service('config.factory')->getEditable('user.mail');
++  $blocked_template = $mail_config->get('status_blocked.body');
++  if(strpos('[site:account-name]',$blocked_template) !== FALSE){
++    $blocked_template = str_replace('[site:account-name]','[site:name]',$blocked_template);
++    $mail_config->set('status_blocked.body',$blocked_template);
++  }
++}
