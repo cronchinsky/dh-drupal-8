@@ -1,0 +1,12 @@
+name: Courier
+type: module
+description: 'Provides storage for various types of messages.'
+# core: 8.x
+dependencies:
+  - text
+  - dynamic_entity_reference
+# Information added by Drupal.org packaging script on 2016-04-21
+version: '8.x-1.0-alpha8'
+core: '8.x'
+project: 'courier'
+datestamp: 1461233643

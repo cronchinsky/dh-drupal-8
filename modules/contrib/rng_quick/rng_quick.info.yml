@@ -1,0 +1,13 @@
+name: RNG Quick Registration
+type: module
+description: 'Provides a faster method to register for events.'
+package: RNG
+# core: 8.x
+dependencies:
+  - rng (>= 8.x-1.0)
+
+# Information added by Drupal.org packaging script on 2016-03-26
+version: '8.x-1.0-beta5'
+core: '8.x'
+project: 'rng_quick'
+datestamp: 1458986942

@@ -1,0 +1,216 @@
+<?php
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Drupal\courier\ChannelInterface;
+use Drupal\courier\TemplateCollectionInterface;
+use Drupal\rng\Entity\RuleSchedule;
+use Drupal\rng\Entity\Registrant;
+use Drupal\rng\EventTypeInterface;
+use Drupal\rng\Exception\InvalidEventException;
+use Drupal\courier\Entity\TemplateCollection;
+use Drupal\rng\RuleComponentInterface;
+use Drupal\rng\Plugin\Action\CourierTemplateCollection;
+use Drupal\Core\Render\Element;
+
+/**
+ * Implements hook_help().
+ */
+function rng_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'rng.registration_type.overview':
+      $output = '<p>' . t('Each registration type is a form that is filled to create a registration. Events can choose which registration type to use for its registrations.') . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_entity_access().
+ */
+function rng_entity_access(EntityInterface $entity, $operation, AccountInterface $account) {
+  if ($operation == 'manage event') {
+    /** @var EventTypeInterface $event_type */
+    $event_type = \Drupal::service('rng.event_manager')
+      ->eventType($entity->getEntityTypeId(), $entity->bundle());
+    if ($event_type && $event_type->getEventManageOperation()) {
+      // Prevents recursion:
+      if ($event_type->getEventManageOperation() != 'manage event') {
+        if ($entity->access($event_type->getEventManageOperation(), $account)) {
+          return AccessResult::allowed()
+            ->addCacheableDependency($entity);
+        }
+      }
+    }
+  }
+
+  if ($operation == 'update') {
+    if ($entity instanceof ChannelInterface) {
+      if ($template_collection = TemplateCollection::getTemplateCollectionForTemplate($entity)) {
+        // Allow editing template if the user has 'manage event' for the event.
+        if ($owner = $template_collection->getOwner()) {
+          $event_manager = \Drupal::service('rng.event_manager');
+          /** @var \Drupal\rng\EventManagerInterface $event_manager */
+          if ($event_manager->isEvent($owner)) {
+            return AccessResult::allowedIf($owner->access('manage event'))
+              ->addCacheableDependency($owner);
+          }
+        }
+      }
+    }
+  }
+
+  if ($operation == 'templates' && $entity instanceof TemplateCollectionInterface) {
+    $owner = $entity->getOwner();
+    /** @var \Drupal\rng\EventManagerInterface $event_manager */
+    $event_manager = \Drupal::service('rng.event_manager');
+    if ($owner && $event_manager->isEvent($owner) && $owner->access('manage event')) {
+      return AccessResult::allowed()
+        ->addCacheableDependency($owner);
+    }
+  }
+
+  return AccessResult::neutral();
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function rng_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'user_admin_permissions') {
+    // Disable registrations for anonymous users.
+    foreach ($form['permissions'] as $permission_id => &$permission) {
+      if (strstr($permission_id, 'rng register')) {
+        $permission['anonymous']['#disabled'] = TRUE;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function rng_cron() {
+  // Add scheduled rules to be executed.
+  $queue = \Drupal::queue('rng_rule_scheduler');
+  $rule_scheduler_storage = \Drupal::entityManager()->getStorage('rng_rule_scheduler');
+  $ids = $rule_scheduler_storage->getQuery()
+    ->condition('trigger_date', time(), '<=')
+    ->condition('in_queue', 0, '=')
+    ->condition('attempts', RuleSchedule::ATTEMPTS_MAX, '<=')
+    ->execute();
+
+  foreach ($rule_scheduler_storage->loadMultiple($ids) as $rule_schedule) {
+    $data = ['rule_component_id' => $rule_schedule->id()];
+    if ($queue->createItem($data)) {
+      $rule_schedule->setInQueue(TRUE);
+      $rule_schedule->save();
+    }
+  }
+
+  // Delete scheduled rules which have had too many attempts.
+  $ids = $rule_scheduler_storage->getQuery()
+    ->condition('attempts', RuleSchedule::ATTEMPTS_MAX, '>')
+    ->execute();
+  $rule_scheduler_storage->delete($rule_scheduler_storage->loadMultiple($ids));
+}
+
+/**
+ * Implements hook_entity_operation().
+ */
+function rng_entity_operation(EntityInterface $entity) {
+  $operations = [];
+
+  if ($entity instanceof EventTypeInterface) {
+    $operations['access_defaults'] = array(
+      'title' => t('Event access defaults'),
+      'url' => Url::fromRoute('entity.event_type.access_defaults', [
+        'event_type' => $entity->id(),
+      ]),
+      'weight' => 20,
+    );
+  }
+
+  return $operations;
+}
+
+/**
+ * Implements hook_entity_predelete().
+ */
+function rng_entity_predelete(EntityInterface $entity) {
+  /** @var \Drupal\courier\Service\IdentityChannelManagerInterface $icm */
+  $icm = \Drupal::service('plugin.manager.identity_channel');
+  if (in_array($entity->getEntityType(), $icm->getIdentityTypes())) {
+    // Remove registrant references to this identity.
+    $registrant_ids = Registrant::getRegistrantsIdsForIdentity($entity);
+    foreach (Registrant::loadMultiple($registrant_ids) as $registrant) {
+      $registrant->clearIdentity();
+      $registrant->save();
+    }
+  }
+
+  // Delete related entities when an event is deleted.
+  /** @var \Drupal\rng\EventManagerInterface $event_manager */
+  $event_manager = \Drupal::service('rng.event_manager');
+  try{
+    $event_meta = $event_manager->getMeta($entity);
+
+    // Delete registrations.
+    \Drupal::entityTypeManager()
+      ->getStorage('registration')
+      ->delete($event_meta->getRegistrations());
+
+    // Delete groups.
+    \Drupal::entityTypeManager()
+      ->getStorage('registration_group')
+      ->delete($event_meta->getGroups());
+
+    // Delete rules.
+    \Drupal::entityTypeManager()
+      ->getStorage('rng_rule')
+      ->delete($event_meta->getRules(NULL, FALSE, NULL));
+  }
+  // Not an event, thrown by getMeta().
+  catch (InvalidEventException $e) { }
+
+  if ($entity instanceof RuleComponentInterface) {
+    // Delete a TemplateCollection if the entity is a component with
+    // configuration for 'rng_courier_message'.
+    if ($entity->getPluginId() == 'rng_courier_message') {
+      $action = $entity->createInstance();
+      if (($action instanceof CourierTemplateCollection) && ($template_collection = $action->getTemplateCollection())) {
+        $template_collection->delete();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function rng_theme() {
+  return [
+    'registration' => [
+      'render element' => 'elements',
+    ],
+  ];
+}
+
+/**
+ * Prepares variables for registration templates.
+ *
+ * Default template: registration.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - elements: An associative array containing the user information and any
+ *   - attributes: HTML attributes for the containing element.
+ */
+function template_preprocess_registration(array &$variables) {
+  foreach (Element::children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
+}

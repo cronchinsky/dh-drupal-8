@@ -1,0 +1,14 @@
+name: RNG
+type: module
+description: 'Allows people to associate with an event.'
+package: RNG
+# core: 8.x
+dependencies:
+  - dynamic_entity_reference
+  - courier
+  - unlimited_number
+# Information added by Drupal.org packaging script on 2016-03-25
+version: '8.x-1.0'
+core: '8.x'
+project: 'rng'
+datestamp: 1458898740
