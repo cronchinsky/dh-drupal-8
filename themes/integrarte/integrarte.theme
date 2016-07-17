@@ -79,6 +79,17 @@ function integrarte_preprocess_page(&$variables) {
   $variables['linkedin_url'] = theme_get_setting('linkedin_url');
   $variables['pinterest_url'] = theme_get_setting('pinterest_url');
   $variables['rss_url'] = theme_get_setting('rss_url');
+  
+  // You will most likely want to show and render the form for anonymous users.
+/*
+  $variables['login_form'] = FALSE;
+  if (!\Drupal::currentUser()->id()) {
+    $form = Drupal::formBuilder()->getForm(Drupal\user\Form\UserLoginForm::class) ; 
+    $render = Drupal::service('renderer');
+    $variables['login_form'] = $render->renderPlain($form);
+    dsm('creating login form');
+  }
+*/
 }
 
 /**

@@ -810,3 +810,17 @@ li a,
 	}
 }
 */
+
+/* EVENT Regisration */
+
+.page-node-type-event table {
+	overflow: visible;
+}
+
+div.integrarte-login {
+	padding: 10px 20px;
+}
+
+div.integrarte-login a {
+	color: #890000;
+}

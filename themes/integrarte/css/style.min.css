@@ -69,6 +69,14 @@ hr {
   border-top: 1px solid white;
   border-bottom: 1px solid white;
 }
+
+/* colors */
+
+.integrarte-red {
+	color: #832733;
+}
+
+
 .title, #wrapper .block-page-title-block {
   border-bottom: 3px double #f6f6f6;
   margin-bottom: 19px;
