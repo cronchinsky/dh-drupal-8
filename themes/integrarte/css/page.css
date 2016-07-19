@@ -813,8 +813,9 @@ li a,
 
 /* EVENT Regisration */
 
-.page-node-type-calendar-event table {
+.view-rng-registrations-node table {
 	overflow: visible;
+	margin-top: 70px;
 }
 
 div.integrarte-login {
