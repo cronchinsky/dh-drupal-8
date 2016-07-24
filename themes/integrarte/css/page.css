@@ -239,14 +239,14 @@ border-bottom: 6px double #f6f6f6;
   height: 42px;
 }
 .pager ul li a {
-  background-color: rgb(41, 169, 223);
+  background-color: #890000;
   color: white;
-  border: 1px solid rgb(41, 169, 223);
+  border: 1px solid #890000;
   border-radius: 9px;
 }
 .pager ul li a:hover,.pager .is-active a {
   background-color: white;
-  color: rgb(41, 169, 223);
+  color: #890000;
   border: 1px solid #777;
   border-radius: 9px;
 }
@@ -824,4 +824,10 @@ div.integrarte-login {
 
 div.integrarte-login a {
 	color: #890000;
+}
+
+/* Calendar */
+
+.view-content-field-date-on-calendar .view-header h3 {
+	font-size: 250% !important;
 }
