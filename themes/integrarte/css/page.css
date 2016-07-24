@@ -831,3 +831,7 @@ div.integrarte-login a {
 .view-content-field-date-on-calendar .view-header h3 {
 	font-size: 250% !important;
 }
+
+.calendar-calendar th.days {
+	color: #fff;
+}
