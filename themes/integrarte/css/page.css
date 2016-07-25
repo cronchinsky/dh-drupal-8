@@ -811,7 +811,7 @@ li a,
 }
 */
 
-/* EVENT Regisration */
+/* EVENT Regisration and Calendar event pages*/
 
 .view-rng-registrations-node table {
 	overflow: visible;
@@ -826,6 +826,13 @@ div.integrarte-login a {
 	color: #890000;
 }
 
+article.node--type-calendar-event {
+	font-size: 16px;
+}
+
+article.node--type-calendar-event .contextual-region.node--view-mode-description h2 {
+	display: none;
+}
 /* Calendar */
 
 .view-content-field-date-on-calendar .view-header h3 {
