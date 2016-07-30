@@ -370,11 +370,16 @@ table tr:nth-child(even) {
 table tr:nth-child(odd) {
   background-color:rgba(238, 238, 238, 0.36);
 }
-table th	{
-  background-color: #91918F;
+table th,
+table th a	{
+  background-color:#666;
   color: white;
 }
-table tr:hover,table tr:hover a {
+table th a:hover {
+	color: white;
+	text-decoration: underline;
+}
+table tr:hover {
   background:#eee;
   /* color:white; */
 }
@@ -506,7 +511,19 @@ table a:hover {
 body {  }
 
 #block-integrarte-branding {
-	margin-top: 17px;
+	margin-top: 5px;
+  /* max-width: 30%; */
+}
+#block-integrarte-branding img {
+		max-width: 100%;
+		height: auto;
+}
+
+
+@media (max-width: 768px) {
+	#block-integrarte-branding  {
+	  max-width: 40%;
+	}
 }
 
 .navbar.mini-nav {
@@ -516,6 +533,7 @@ body {  }
 
 #content {
 	margin-top: 117px;
+	/* margin-top: 50px; */
 	padding-bottom: 30px;
 }
 
@@ -833,6 +851,47 @@ article.node--type-calendar-event {
 article.node--type-calendar-event .contextual-region.node--view-mode-description h2 {
 	display: none;
 }
+
+/* Class type */
+.node--type-class-description > h2 {
+	display: none !important;
+}
+.node--type-class-description h2 {
+	margin-top: 0;
+	padding-top: 0;
+	line-height: 20px;
+}
+
+article.node--type-class-type {
+	margin-top: 0;
+}
+
+/* schedule by week */
+.view-schedule-by-week a,
+.view-content-field-date-on-calendar a {
+	color: #890000;
+}
+
+.view-schedule-by-week .view-footer,
+.view-content-field-date-on-calendar .view-footer {
+	font-size: 20px;
+	padding-top: 30px;
+	float: right;
+}
+
+.path-schedule-by-day .block-local-tasks-block {
+	float: left;
+	z-index: 100;
+}
+
+.view-schedule-by-week .view-header {
+	float: right;
+}
+
+.view-schedule-by-week .view-header h3 {
+	font-size: 200% !important;
+}
+
 /* Calendar */
 
 .view-content-field-date-on-calendar .view-header h3 {

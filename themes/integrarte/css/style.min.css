@@ -1817,9 +1817,19 @@ form#newsletter button {
   -moz-border-radius: 0 3px 3px 0;
   border-radius: 0 3px 3px 0;
 }
+#block-integrartelogo {
+	float:right;
+	margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+	#block-integrartelogo  {
+	  float: none;
+	}
+}
 #copyright {
   padding: 20px 0;
-  background-color: #884444;
+  background-color: #77777a;
   /* background-color: black; */
 }
 #copyright p,#copyright span {
@@ -2034,7 +2044,11 @@ a.facebook-icon {
   }
   #portfolio-wrapper .col-sm-3.portfolio-item {
     padding: 0;
-    width: 24%}
+    width: 24%;
+  }
+  #block-integrarte-branding  {
+	  width: 150px;
+	}
 }@media only screen and (min-width:768px) and (max-width:959px) {
   .navbar-brand {
     margin-left: 15px;
@@ -2045,6 +2059,9 @@ a.facebook-icon {
   }
   ol li ol.childlist .comment-des {
     width: 86%}
+  #block-integrarte-branding  {
+	  width: 150px;
+	}
 }@media only screen and (max-width:767px) {
   body {
     padding: 0;
@@ -2089,6 +2106,9 @@ a.facebook-icon {
   .item-description.related {
     margin-bottom: 30px;
   }
+  #block-integrarte-branding  {
+	  width: 150px;
+	}
 }@media only screen and (min-width:480px) and (max-width:767px) {
   .flickr-widget a {
     width: 53px;
