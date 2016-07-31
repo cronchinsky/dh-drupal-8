@@ -103,7 +103,10 @@ class DateArgumentWrapper {
       $date->setISODate($year, $month);
     }
     else {
-      $date =  \DateTime::createFromFormat($this->getArgFormat(), $value);
+      // Adds a ! character to the format so that the date is reset instead of
+      // using the current day info, which can lead to issues for months w/ 31 days.
+      $format = '!'.$this->getArgFormat();
+      $date =  \DateTime::createFromFormat($format, $value);
     }
     return $date;
   }

@@ -466,7 +466,7 @@ class Calendar extends StylePluginBase {
        $msg = 'No calendar date argument value was provided.';
       }
       else {
-        $msg = t('The value <strong>@value</strong> is a valid date argument for @granularity',
+        $msg = t('The value <strong>@value</strong> is not a valid date argument for @granularity',
           [
             '@value' => $argument->getDateArg()->getValue(),
             '@granularity' => $argument->getGranularity(),

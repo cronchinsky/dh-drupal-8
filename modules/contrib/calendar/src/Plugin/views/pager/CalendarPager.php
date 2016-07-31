@@ -31,8 +31,8 @@ use Drupal\views\ViewExecutable;
  */
 class CalendarPager extends PagerPluginBase {
 
-  const NEXT = '+';
-  const PREVIOUS = '-';
+  const NEXT = 'next';
+  const PREVIOUS = 'previous';
   /**
    * @var \Drupal\calendar\DateArgumentWrapper;
    */
@@ -54,10 +54,10 @@ class CalendarPager extends PagerPluginBase {
       return [];
     }
     $items['previous'] = [
-      'url' => $this->getPagerURL($this::PREVIOUS),
+      'url' => $this->getPagerURL(self::PREVIOUS),
     ];
     $items['next'] = [
-      'url' => $this->getPagerURL($this::NEXT),
+      'url' => $this->getPagerURL(self::NEXT),
     ];
     return array(
       '#theme' => $this->themeFunctions(),
@@ -76,7 +76,17 @@ class CalendarPager extends PagerPluginBase {
    */
   protected function getPagerArgValue($mode) {
     $datetime = $this->argument->createDateTime();
-    $datetime->modify($mode . '1 ' . $this->argument->getGranularity());
+    $granularity = $this->argument->getGranularity();
+
+    // Exception for days, which need to be handled by using a +1
+    if ( $granularity == 'day' ) {
+      $mode = ($mode == self::NEXT) ? '+' : '-';
+      $datetime->modify("{$mode}1 {$granularity}");
+    }
+    else {
+      // "first day of next|previous month|week|year"
+      $datetime->modify("first day of {$mode} {$granularity}");
+    }
     return $datetime->format($this->argument->getArgFormat());
   }
 

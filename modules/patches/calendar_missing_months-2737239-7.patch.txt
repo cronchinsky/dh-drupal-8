@@ -1,0 +1,76 @@
+diff --git a/src/DateArgumentWrapper.php b/src/DateArgumentWrapper.php
+index 5c03855..e2bd62d 100644
+--- a/src/DateArgumentWrapper.php
++++ b/src/DateArgumentWrapper.php
+@@ -103,7 +103,10 @@ class DateArgumentWrapper {
+       $date->setISODate($year, $month);
+     }
+     else {
+-      $date =  \DateTime::createFromFormat($this->getArgFormat(), $value);
++      // Adds a ! character to the format so that the date is reset instead of
++      // using the current day info, which can lead to issues for months w/ 31 days.
++      $format = '!'.$this->getArgFormat();
++      $date =  \DateTime::createFromFormat($format, $value);
+     }
+     return $date;
+   }
+diff --git a/src/Plugin/views/pager/CalendarPager.php b/src/Plugin/views/pager/CalendarPager.php
+index 5fedd8b..fc38eab 100644
+--- a/src/Plugin/views/pager/CalendarPager.php
++++ b/src/Plugin/views/pager/CalendarPager.php
+@@ -31,8 +31,8 @@ use Drupal\views\ViewExecutable;
+  */
+ class CalendarPager extends PagerPluginBase {
+ 
+-  const NEXT = '+';
+-  const PREVIOUS = '-';
++  const NEXT = 'next';
++  const PREVIOUS = 'previous';
+   /**
+    * @var \Drupal\calendar\DateArgumentWrapper;
+    */
+@@ -54,10 +54,10 @@ class CalendarPager extends PagerPluginBase {
+       return [];
+     }
+     $items['previous'] = [
+-      'url' => $this->getPagerURL($this::PREVIOUS),
++      'url' => $this->getPagerURL(self::PREVIOUS),
+     ];
+     $items['next'] = [
+-      'url' => $this->getPagerURL($this::NEXT),
++      'url' => $this->getPagerURL(self::NEXT),
+     ];
+     return array(
+       '#theme' => $this->themeFunctions(),
+@@ -76,7 +76,17 @@ class CalendarPager extends PagerPluginBase {
+    */
+   protected function getPagerArgValue($mode) {
+     $datetime = $this->argument->createDateTime();
+-    $datetime->modify($mode . '1 ' . $this->argument->getGranularity());
++    $granularity = $this->argument->getGranularity();
++
++    // Exception for days, which need to be handled by using a +1
++    if ( $granularity == 'day' ) {
++      $mode = ($mode == self::NEXT) ? '+' : '-';
++      $datetime->modify("{$mode}1 {$granularity}");
++    }
++    else {
++      // "first day of next|previous month|week|year"
++      $datetime->modify("first day of {$mode} {$granularity}");
++    }
+     return $datetime->format($this->argument->getArgFormat());
+   }
+ 
+diff --git a/src/Plugin/views/style/Calendar.php b/src/Plugin/views/style/Calendar.php
+index 25841ac..b5b0269 100644
+--- a/src/Plugin/views/style/Calendar.php
++++ b/src/Plugin/views/style/Calendar.php
+@@ -466,7 +466,7 @@ class Calendar extends StylePluginBase {
+        $msg = 'No calendar date argument value was provided.';
+       }
+       else {
+-        $msg = t('The value <strong>@value</strong> is a valid date argument for @granularity',
++        $msg = t('The value <strong>@value</strong> is not a valid date argument for @granularity',
+           [
+             '@value' => $argument->getDateArg()->getValue(),
+             '@granularity' => $argument->getGranularity(),
