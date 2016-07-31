@@ -817,6 +817,16 @@ li a,
 .view-integrarte-faculty h2 {
 	margin-top: 0;
 }
+
+.view-integrarte-faculty .views-row::before,
+.view-integrarte-faculty .views-row::after {
+    content:"";
+    display:table;
+}
+
+.view-integrarte-faculty .views-row::after {
+	clear: both;
+}
 /*
 @media (max-width: 768px) {
 	#wrapper .field--name-field-bio-photo img {
@@ -850,6 +860,10 @@ article.node--type-calendar-event {
 
 article.node--type-calendar-event .contextual-region.node--view-mode-description h2 {
 	display: none;
+}
+
+#block-masterclasspaypay {
+	clear: left;
 }
 
 /* Class type */
