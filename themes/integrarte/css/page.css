@@ -818,6 +818,10 @@ li a,
 	margin-top: 0;
 }
 
+.view-integrarte-faculty .views-row {
+	padding: 25px 0;
+}
+
 .view-integrarte-faculty .views-row::before,
 .view-integrarte-faculty .views-row::after {
     content:"";
@@ -864,6 +868,10 @@ article.node--type-calendar-event .contextual-region.node--view-mode-description
 
 #block-masterclasspaypay {
 	clear: left;
+}
+
+#block-baroquedancepayment {
+	margin-top: 60px;
 }
 
 /* Class type */
@@ -915,4 +923,25 @@ article.node--type-class-type {
 
 .calendar-calendar th.days {
 	color: #fff;
+}
+
+.calendar-calendar .month-view .full tr td.single-day.today  {
+	 /* border-bottom: 2px solid #A32929; */
+	 border-bottom: 2px solid #666;
+}
+
+.calendar-calendar .month-view .full tr td.today, 
+.calendar-calendar .month-view .full tr.odd td.today, 
+.calendar-calendar .month-view .full tr.even td.today {
+/*
+	  border-left: 2px solid #A32929;
+    border-right: 2px solid #A32929;
+*/
+    border-left: 2px solid #666;
+    border-right: 2px solid #666;
+}
+
+.calendar-calendar .month-view .full td.date-box.today {
+	/* border-color: #A32929; */
+	border-color: #666;
 }
