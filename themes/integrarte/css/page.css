@@ -914,6 +914,26 @@ article.node--type-class-type {
 	font-size: 200% !important;
 }
 
+/* Upcoming Classes: Schedule today */
+
+.view-schedule-today .view-footer {
+	text-align: center;
+}
+
+.view-schedule-today .view-footer #integrarte-go-to {
+	float: right;
+}
+.view-schedule-today .view-footer p {
+	clear: right;
+	font-size: 160% !important;
+	padding-top: 10px;
+}
+
+.view-schedule-today .view-footer h3 {
+	margin-top: 20px;
+	font-size: 250% !important;
+}
+
 /* Calendar */
 
 .view-content-field-date-on-calendar .view-header h3 {
