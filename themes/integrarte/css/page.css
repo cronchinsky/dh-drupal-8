@@ -866,6 +866,11 @@ article.node--type-calendar-event .contextual-region.node--view-mode-description
 	display: none;
 }
 
+article.node--type-calendar-event .field--name-field-image {
+	float: right;
+	margin: 0 0 30px 30px;
+}
+
 #block-masterclasspaypay {
 	clear: left;
 }
