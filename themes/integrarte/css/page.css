@@ -722,7 +722,8 @@ li a,
   float: left;
 }
 
-#block-summerprogram2016video .field--name-field-video iframe {
+#block-summerprogram2016video .field--name-field-video iframe,
+#block-integrartenewplace .field--name-field-video iframe {
 	margin: 30px auto;
 	display: block;
 }
