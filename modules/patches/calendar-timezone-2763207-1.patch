@@ -1,0 +1,19 @@
+diff --git a/src/Plugin/views/row/Calendar.php b/src/Plugin/views/row/Calendar.php
+index 070bde2..fbb5a75 100644
+--- a/src/Plugin/views/row/Calendar.php
++++ b/src/Plugin/views/row/Calendar.php
+@@ -438,8 +438,12 @@ class Calendar extends RowPluginBase {
+ //        $db_tz   = date_get_timezone_db($tz_handling, isset($item->$tz_field) ? $item->$tz_field : timezone_name_get($dateInfo->getTimezone()));
+ //        $to_zone = date_get_timezone($tz_handling, isset($item->$tz_field)) ? $item->$tz_field : timezone_name_get($dateInfo->getTimezone());
+ 
+-        $item_start_date = \DateTime::createFromFormat($storage_format, $row->{$info['query_name']});
+-        $item_end_date = \DateTime::createFromFormat($storage_format, $row->{$info['query_name']});
++				// set timezone: seems to work to retrieve date in UTC and then convert to user's timezone
++        $timezone = new \DateTimeZone('UTC'); 
++        $item_start_date = \DateTime::createFromFormat($storage_format, $row->{$info['query_name']},$timezone );
++        $item_start_date->setTimezone(new \DateTimeZone(drupal_get_user_timezone()));
++        $item_end_date = \DateTime::createFromFormat($storage_format, $row->{$info['query_name']}, $timezone);
++        $item_end_date->setTimezone(new \DateTimeZone(drupal_get_user_timezone()));
+ 
+         // @todo don't hardcode
+ //        $granularity = date_granularity_precision($cck_field['settings']['granularity']);

@@ -1,0 +1,28 @@
+diff --git a/src/DateFieldWrapper.php b/src/DateFieldWrapper.php
+index 8c6d0c0..185981b 100644
+--- a/src/DateFieldWrapper.php
++++ b/src/DateFieldWrapper.php
+@@ -7,8 +7,8 @@
+ 
+ namespace Drupal\calendar;
+ 
+-
+ use Drupal\Core\Field\FieldItemList;
++use Drupal\datetime\Plugin\Field\FieldType\DateTimeItem;
+ 
+ class DateFieldWrapper {
+ 
+@@ -49,7 +49,12 @@ class DateFieldWrapper {
+     $field_def = $this->fieldItemList->getFieldDefinition();
+     $field_type = $field_def->getFieldStorageDefinition()->getType();
+     if ($field_type == 'datetime') {
+-      return strtotime($value);
++      /** @var \Drupal/datetime\Plugin\FieldType\DateTimeItem $field */
++      $field = $this->fieldItemList->get(0);
++      // Set User's Timezone
++      $field->date->setTimezone(timezone_open(drupal_get_user_timezone()));
++      // Format to timestamp.
++      return $field->date->format('U');
+     }
+     return (int)$value;
+   }
