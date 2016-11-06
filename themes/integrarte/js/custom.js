@@ -521,7 +521,8 @@ var threshold = 10; // Change to pixels scrolled
 
 $(window).scroll(function () {
     var distance = $(this).scrollTop();
-    if (distance > threshold) { // If scrolled past threshold
+    var width = $(window).width();
+    if ((distance > threshold) && (width > 768)) { // If scrolled past threshold
         nav.addClass(nav_class); // Add class to nav
     } else { // If user scrolls back to top
         if (nav.hasClass(nav_class)) { // And if class has been added
