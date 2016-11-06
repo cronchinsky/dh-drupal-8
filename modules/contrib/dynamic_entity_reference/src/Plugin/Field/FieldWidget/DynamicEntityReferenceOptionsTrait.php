@@ -2,7 +2,6 @@
 
 namespace Drupal\dynamic_entity_reference\Plugin\Field\FieldWidget;
 
-
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -32,7 +31,7 @@ trait DynamicEntityReferenceOptionsTrait {
     // We need to check against a flat list of options.
     $flat_options = OptGroup::flattenOptions($this->getOptions($items->getEntity()));
 
-    $selected_options = array();
+    $selected_options = [];
     foreach ($items as $item) {
       $value = "{$item->target_type}-{$item->target_id}";
       // Keep the value if it actually is in the list of options (needs to be

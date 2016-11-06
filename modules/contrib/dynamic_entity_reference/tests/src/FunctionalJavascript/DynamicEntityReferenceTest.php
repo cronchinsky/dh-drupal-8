@@ -3,9 +3,11 @@
 namespace Drupal\Tests\dynamic_entity_reference\FunctionalJavascript;
 
 use Drupal\Component\Utility\Crypt;
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\Url;
+use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestBundle;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
@@ -17,6 +19,11 @@ use Drupal\FunctionalJavascriptTests\JavascriptTestBase;
  * @group dynamic_entity_reference
  */
 class DynamicEntityReferenceTest extends JavascriptTestBase {
+
+  /**
+   * Escape key code.
+   */
+  const ESCAPE_KEY = 27;
 
   /**
    * The admin user.
@@ -33,6 +40,13 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
   protected $anotherUser;
 
   /**
+   * Test entity.
+   *
+   * @var \Drupal\entity_test\Entity\EntityTest
+   */
+  protected $testEntity;
+
+  /**
    * Modules to enable.
    *
    * @var array
@@ -42,6 +56,7 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
     'field_ui',
     'dynamic_entity_reference',
     'entity_test',
+    'node',
   ];
 
   /**
@@ -54,6 +69,8 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
     'view test entity',
     'administer entity_test fields',
     'administer entity_test content',
+    'administer node fields',
+    'administer node display',
     'access user profiles',
   ];
 
@@ -77,6 +94,15 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
       'label' => 'Test label',
       'description' => 'My test description',
     ])->save();
+    // We will query on the first two characters of the second username.
+    $autocomplete_query = Unicode::substr($this->anotherUser->label(), 0, 3);
+    $this->testEntity = EntityTest::create([
+      // Make this partially match the second user name.
+      'name' => $autocomplete_query . $this->randomMachineName(5),
+      'type' => 'entity_test',
+    ]);
+    $this->testEntity->save();
+
     $this->drupalLogin($this->adminUser);
     // Add a new dynamic entity reference field.
     $this->drupalGet('entity_test/structure/entity_test/fields/add-field');
@@ -116,7 +142,7 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
     $this->assertSame($autocomplete_field_1->getAttribute('data-autocomplete-path'), $this->createAutoCompletePath('entity_test'));
     $page = $this->getSession()->getPage();
     $page->checkField('settings[entity_test][handler_settings][target_bundles][entity_test]');
-    $this->assertJsCondition('(typeof(jQuery)=="undefined" || (0 === jQuery.active && 0 === jQuery(\':animated\').length))', 20000);
+    $assert_session->assertWaitOnAjaxRequest(20000);
     $page->checkField('settings[entity_test][handler_settings][auto_create]');
     $this->submitForm([], t('Save settings'), 'field-config-edit-form');
     $assert_session->pageTextContains('Saved Foobar configuration');
@@ -131,6 +157,106 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
     $this->assertEquals($settings['entity_test']['handler_settings']['target_bundles'], ['entity_test' => 'entity_test']);
     $this->assertTrue($settings['entity_test']['handler_settings']['auto_create']);
     $this->assertEmpty($settings['entity_test']['handler_settings']['auto_create_bundle']);
+    $this->drupalGet('entity_test/add');
+    $autocomplete_field = $page->findField('field_foobar[0][target_id]');
+    $entity_type_field = $page->findField('field_foobar[0][target_type]');
+    // Change to user.
+    $entity_type_field->selectOption('user');
+    foreach (str_split($autocomplete_query) as $char) {
+      // Autocomplete uses keydown/up directly.
+      $autocomplete_field->keyDown($char);
+      $autocomplete_field->keyUp($char);
+    }
+    // Wait for ajax.
+    $assert_session->assertWaitOnAjaxRequest(20000);
+    // And autocomplete selection.
+    $this->assertJsCondition('jQuery(".ui-autocomplete.ui-menu li.ui-menu-item:visible").length > 0', 5000);
+    $assert_session->pageTextContains($this->anotherUser->label());
+    // Clear previous autocomplete.
+    $autocomplete_field->setValue('');
+    $autocomplete_field->keyDown(self::ESCAPE_KEY);
+    // Change to entity_test.
+    $entity_type_field->selectOption('entity_test');
+    foreach (str_split($autocomplete_query) as $char) {
+      // Autocomplete uses keydown/up directly.
+      $autocomplete_field->keyDown($char);
+      $autocomplete_field->keyUp($char);
+    }
+    // Wait for ajax.
+    $assert_session->assertWaitOnAjaxRequest(20000);
+    // And autocomplete selection.
+    $this->assertJsCondition('jQuery(".ui-autocomplete.ui-menu li.ui-menu-item:visible").length > 0', 5000);
+    $assert_session->pageTextContains($this->testEntity->label());
+  }
+
+  /**
+   * Tests view modes in formatter of dynamic entity reference field.
+   */
+  public function testFieldFormatterViewModes() {
+    $assert_session = $this->assertSession();
+    $this->drupalLogin($this->adminUser);
+    $this->drupalCreateContentType(['type' => 'test_content']);
+    $this->drupalGet('/admin/structure/types/manage/test_content/fields/add-field');
+    $edit = [
+      'label' => 'Foobar',
+      'field_name' => 'foobar',
+      'new_storage_type' => 'dynamic_entity_reference',
+    ];
+    $this->submitForm($edit, t('Save and continue'), 'field-ui-field-storage-add-form');
+    $page = $this->getSession()->getPage();
+    $entity_type_ids_select = $assert_session->selectExists('settings[entity_type_ids][]', $page);
+    $entity_type_ids_select->selectOption('user');
+    $assert_session->selectExists('cardinality', $page)
+      ->selectOption(FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED);
+    $page->uncheckField('settings[exclude_entity_types]');
+    $this->submitForm([], t('Save field settings'), 'field-storage-config-edit-form');
+    $this->drupalGet('admin/structure/types/manage/test_content/display');
+    $page = $this->getSession()->getPage();
+    $formats = $assert_session->selectExists('fields[field_foobar][type]', $page);
+    $formats->selectOption('dynamic_entity_reference_entity_view');
+    $assert_session->assertWaitOnAjaxRequest();
+    $page->pressButton('Edit');
+    $assert_session->assertWaitOnAjaxRequest();
+    $page = $this->getSession()->getPage();
+    $assert_session->selectExists('fields[field_foobar][settings_edit_form][settings][user][view_mode]', $page);
+    $assert_session->optionExists('fields[field_foobar][settings_edit_form][settings][user][view_mode]', 'compact', $page);
+    $assert_session->optionExists('fields[field_foobar][settings_edit_form][settings][user][view_mode]', 'full', $page);
+    // Edit field, turn on exclude entity types and check display again.
+    $this->drupalGet('admin/structure/types/manage/test_content/fields/node.test_content.field_foobar/storage');
+    $page->checkField('settings[exclude_entity_types]');
+    $this->submitForm([], t('Save field settings'), 'field-storage-config-edit-form');
+    $this->drupalGet('admin/structure/types/manage/test_content/display');
+    $page = $this->getSession()->getPage();
+    $formats = $assert_session->selectExists('fields[field_foobar][type]', $page);
+    $formats->selectOption('dynamic_entity_reference_entity_view');
+    $assert_session->assertWaitOnAjaxRequest();
+    // Assert node view mode is set on default.
+    $assert_session->responseContains("Content view mode: default");
+    $page->pressButton('Edit');
+    $assert_session->assertWaitOnAjaxRequest();
+    $page = $this->getSession()->getPage();
+    // Assert we have multi select form items for view mode settings.
+    $assert_session->selectExists('fields[field_foobar][settings_edit_form][settings][entity_test_with_bundle][view_mode]', $page);
+    $assert_session->responseContains("View mode for <em class=\"placeholder\">Test entity with bundle</em>");
+    $assert_session->optionExists('fields[field_foobar][settings_edit_form][settings][entity_test_with_bundle][view_mode]', 'default', $page);
+    $assert_session->optionNotExists('fields[field_foobar][settings_edit_form][settings][entity_test_with_bundle][view_mode]', 'rss', $page);
+    $node_view_modes = $assert_session->selectExists('fields[field_foobar][settings_edit_form][settings][node][view_mode]', $page);
+    $assert_session->responseContains("View mode for <em class=\"placeholder\">Content</em>");
+    $assert_session->optionExists('fields[field_foobar][settings_edit_form][settings][node][view_mode]', 'default', $page);
+    $assert_session->optionExists('fields[field_foobar][settings_edit_form][settings][node][view_mode]', 'full', $page);
+    $assert_session->optionExists('fields[field_foobar][settings_edit_form][settings][node][view_mode]', 'rss', $page);
+    $assert_session->optionExists('fields[field_foobar][settings_edit_form][settings][node][view_mode]', 'teaser', $page);
+    // Select different select options and assert summary is changed properly.
+    $node_view_modes->selectOption('teaser');
+    $page->pressButton('Update');
+    $assert_session->assertWaitOnAjaxRequest();
+    $assert_session->responseContains("Content view mode: teaser");
+    $page->pressButton('Edit');
+    $assert_session->assertWaitOnAjaxRequest();
+    $node_view_modes->selectOption('rss');
+    $page->pressButton('Update');
+    $assert_session->assertWaitOnAjaxRequest();
+    $assert_session->responseContains("Content view mode: rss");
   }
 
   /**
@@ -146,11 +272,11 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
     $selection_settings = [];
     $data = serialize($selection_settings) . $target_type . "default:$target_type";
     $selection_settings_key = Crypt::hmacBase64($data, Settings::getHashSalt());
-    return Url::fromRoute('system.entity_autocomplete', array(
+    return Url::fromRoute('system.entity_autocomplete', [
       'target_type' => $target_type,
       'selection_handler' => "default:$target_type",
       'selection_settings_key' => $selection_settings_key,
-    ))->toString();
+    ])->toString();
   }
 
 }
