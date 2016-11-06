@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\courier_message_composer\Form\MessageForm.
- */
-
 namespace Drupal\courier_message_composer\Form;
 
 use Drupal\Core\Entity\ContentEntityTypeInterface;
@@ -17,7 +12,6 @@ use Drupal\courier\MessageQueueItemInterface;
 use Drupal\user\Entity\User;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Render\Element;
 use Drupal\courier\Service\IdentityChannelManagerInterface;
 use Drupal\courier\Service\CourierManagerInterface;
 
@@ -110,9 +104,8 @@ class MessageForm extends FormBase {
       '#required' => TRUE,
     ];
 
-    $entity_types = $this->identityChannelManager->getIdentityTypes();
-    sort($entity_types);
-    foreach ($entity_types as $entity_type_id) {
+    $channels = $this->identityChannelManager->getChannels();
+    foreach ($channels[$courier_channel->id()] as $entity_type_id) {
       $permission = 'courier_message_composer compose ' . $courier_channel->id() . ' to ' . $entity_type_id;
       if (!$this->currentUser()->hasPermission($permission)) {
         continue;
@@ -121,7 +114,7 @@ class MessageForm extends FormBase {
       $entity_type = $this->entityManager->getDefinition($entity_type_id);
       $form['identity_information']['identity'][$entity_type_id] = [
         '#prefix' => '<div class="form-item container-inline">',
-        '#suffix' => '</div>'
+        '#suffix' => '</div>',
       ];
       $form['identity_information']['identity'][$entity_type_id]['radio'] = [
         '#type' => 'radio',
