@@ -1,10 +1,11 @@
-name: RNG Debug
+name: 'RNG test views'
 type: module
-description: 'Debug event settings.'
-package: RNG
-# core: 8.x
+description: 'Provides views for RNG Views tests.'
 dependencies:
   - rng
+  - views
+# core: '8.x'
+
 # Information added by Drupal.org packaging script on 2016-09-05
 version: '8.x-1.2'
 core: '8.x'

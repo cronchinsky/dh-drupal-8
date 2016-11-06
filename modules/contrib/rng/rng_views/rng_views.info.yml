@@ -8,8 +8,8 @@ dependencies:
   - views
   - veoa
   - views_advanced_routing
-# Information added by Drupal.org packaging script on 2016-03-25
-version: '8.x-1.0'
+# Information added by Drupal.org packaging script on 2016-09-05
+version: '8.x-1.2'
 core: '8.x'
 project: 'rng'
-datestamp: 1458898740
+datestamp: 1473072241

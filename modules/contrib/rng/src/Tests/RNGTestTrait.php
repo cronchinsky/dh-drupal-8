@@ -37,14 +37,18 @@ trait RNGTestTrait {
   /**
    * Creates an event type config.
    *
-   * @param \Drupal\Core\Config\Entity\ConfigEntityInterface
-   *   An entity type.
+   * @param string $entity_type_id
+   *   An entity type ID
+   * @param string $bundle
+   *   An entity type bundle.
+   * @param array $values
+   *   Optional values for the event type.
    *
    * @return \Drupal\rng\EventTypeInterface
    *   An event type config.
    */
-  protected function createEventType($entity_type_id, $bundle) {
-    $event_type = EventType::create([
+  protected function createEventType($entity_type_id, $bundle, $values = []) {
+    $event_type = EventType::create($values + [
       'label' => 'Event Type A',
       'entity_type' => $entity_type_id,
       'bundle' => $bundle,
@@ -104,7 +108,7 @@ trait RNGTestTrait {
    *   An array of operations. Value is boolean whether to grant, key can be
    *   any of 'create', 'view', 'update', 'delete'.
    */
-  protected function createRules($roles = [], $operations = []) {
+  protected function createUserRoleRules($roles = [], $operations = []) {
     $rule = EventTypeRule::create([
       'trigger' => 'rng_event.register',
       'entity_type' => 'entity_test',
