@@ -1,7 +1,6 @@
 <?php
 namespace Composer\Installers;
 
-use Composer\IO\IOInterface;
 use Composer\Installer\LibraryInstaller;
 use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledRepositoryInterface;
@@ -19,7 +18,6 @@ class Installer extends LibraryInstaller
         'agl'          => 'AglInstaller',
         'annotatecms'  => 'AnnotateCmsInstaller',
         'bitrix'       => 'BitrixInstaller',
-        'bonefish'     => 'BonefishInstaller',
         'cakephp'      => 'CakePHPInstaller',
         'chef'         => 'ChefInstaller',
         'ccframework'  => 'ClanCatsFrameworkInstaller',
@@ -29,25 +27,19 @@ class Installer extends LibraryInstaller
         'croogo'       => 'CroogoInstaller',
         'dokuwiki'     => 'DokuWikiInstaller',
         'dolibarr'     => 'DolibarrInstaller',
-        'decibel'      => 'DecibelInstaller',
         'drupal'       => 'DrupalInstaller',
         'elgg'         => 'ElggInstaller',
-        'ee3'          => 'ExpressionEngineInstaller',
-        'ee2'          => 'ExpressionEngineInstaller',
         'fuel'         => 'FuelInstaller',
         'fuelphp'      => 'FuelphpInstaller',
         'grav'         => 'GravInstaller',
         'hurad'        => 'HuradInstaller',
-        'imagecms'     => 'ImageCMSInstaller',
         'joomla'       => 'JoomlaInstaller',
         'kirby'        => 'KirbyInstaller',
-        'kodicms'      => 'KodiCMSInstaller',
         'kohana'       => 'KohanaInstaller',
         'laravel'      => 'LaravelInstaller',
         'lithium'      => 'LithiumInstaller',
         'magento'      => 'MagentoInstaller',
         'mako'         => 'MakoInstaller',
-        'mautic'       => 'MauticInstaller',
         'mediawiki'    => 'MediaWikiInstaller',
         'microweber'    => 'MicroweberInstaller',
         'modulework'   => 'MODULEWorkInstaller',
@@ -60,8 +52,6 @@ class Installer extends LibraryInstaller
         'piwik'        => 'PiwikInstaller',
         'ppi'          => 'PPIInstaller',
         'puppet'       => 'PuppetInstaller',
-        'radphp'       => 'RadPHPInstaller',
-        'phifty'       => 'PhiftyInstaller',
         'redaxo'       => 'RedaxoInstaller',
         'roundcube'    => 'RoundcubeInstaller',
         'shopware'     => 'ShopwareInstaller',
@@ -77,7 +67,7 @@ class Installer extends LibraryInstaller
         'wordpress'    => 'WordPressInstaller',
         'zend'         => 'ZendInstaller',
         'zikula'       => 'ZikulaInstaller',
-        'prestashop'   => 'PrestashopInstaller'
+        'prestashop'   => 'PrestashopInstaller',
     );
 
     /**
@@ -95,7 +85,7 @@ class Installer extends LibraryInstaller
         }
 
         $class = 'Composer\\Installers\\' . $this->supportedTypes[$frameworkType];
-        $installer = new $class($package, $this->composer, $this->getIO());
+        $installer = new $class($package, $this->composer);
 
         return $installer->getInstallPath($package, $frameworkType);
     }
@@ -163,21 +153,11 @@ class Installer extends LibraryInstaller
         if (!empty($this->supportedTypes[$frameworkType])) {
             $frameworkClass = 'Composer\\Installers\\' . $this->supportedTypes[$frameworkType];
             /** @var BaseInstaller $framework */
-            $framework = new $frameworkClass(null, $this->composer, $this->getIO());
+            $framework = new $frameworkClass(null, $this->composer);
             $locations = array_keys($framework->getLocations());
             $pattern = $locations ? '(' . implode('|', $locations) . ')' : false;
         }
 
         return $pattern ? : '(\w+)';
-    }
-
-    /**
-     * Get I/O object
-     *
-     * @return IOInterface
-     */
-    private function getIO()
-    {
-        return $this->io;
     }
 }

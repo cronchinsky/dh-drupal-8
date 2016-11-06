@@ -78,6 +78,8 @@ class Container implements IntrospectableContainerInterface, ResettableContainer
     private $underscoreMap = array('_' => '', '.' => '_', '\\' => '_');
 
     /**
+     * Constructor.
+     *
      * @param ParameterBagInterface $parameterBag A ParameterBagInterface instance
      */
     public function __construct(ParameterBagInterface $parameterBag = null)
@@ -319,11 +321,6 @@ class Container implements IntrospectableContainerInterface, ResettableContainer
                 if ($e instanceof InactiveScopeException && self::EXCEPTION_ON_INVALID_REFERENCE !== $invalidBehavior) {
                     return;
                 }
-
-                throw $e;
-            } catch (\Throwable $e) {
-                unset($this->loading[$id]);
-                unset($this->services[$id]);
 
                 throw $e;
             }

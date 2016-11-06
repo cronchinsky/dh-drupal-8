@@ -23,6 +23,8 @@ use Symfony\Component\Validator\ValidationVisitorInterface;
  *
  * This class supports serialization and cloning.
  *
+ * @since  2.5
+ *
  * @author Bernhard Schussek <bschussek@gmail.com>
  */
 class GenericMetadata implements MetadataInterface

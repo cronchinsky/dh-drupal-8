@@ -33,3 +33,4 @@ class DotDirectory extends vfsStreamDirectory
         return true;
     }
 }
+?>

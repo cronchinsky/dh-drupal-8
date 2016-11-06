@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\HttpFoundation;
 
-use Symfony\Component\HttpFoundation\Exception\ConflictingHeadersException;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 /**
@@ -554,7 +553,7 @@ class Request
     /**
      * Gets the list of trusted proxies.
      *
-     * @return array An array of trusted proxies
+     * @return array An array of trusted proxies.
      */
     public static function getTrustedProxies()
     {
@@ -580,7 +579,7 @@ class Request
     /**
      * Gets the list of trusted host patterns.
      *
-     * @return array An array of trusted host patterns
+     * @return array An array of trusted host patterns.
      */
     public static function getTrustedHosts()
     {
@@ -718,7 +717,7 @@ class Request
      * Note: Finding deep items is deprecated since version 2.8, to be removed in 3.0.
      *
      * @param string $key     the key
-     * @param mixed  $default the default value if the parameter key does not exist
+     * @param mixed  $default the default value
      * @param bool   $deep    is parameter deep in multidimensional array
      *
      * @return mixed
@@ -812,34 +811,41 @@ class Request
             return array($ip);
         }
 
-        $hasTrustedForwardedHeader = self::$trustedHeaders[self::HEADER_FORWARDED] && $this->headers->has(self::$trustedHeaders[self::HEADER_FORWARDED]);
-        $hasTrustedClientIpHeader = self::$trustedHeaders[self::HEADER_CLIENT_IP] && $this->headers->has(self::$trustedHeaders[self::HEADER_CLIENT_IP]);
-
-        if ($hasTrustedForwardedHeader) {
+        if (self::$trustedHeaders[self::HEADER_FORWARDED] && $this->headers->has(self::$trustedHeaders[self::HEADER_FORWARDED])) {
             $forwardedHeader = $this->headers->get(self::$trustedHeaders[self::HEADER_FORWARDED]);
             preg_match_all('{(for)=("?\[?)([a-z0-9\.:_\-/]*)}', $forwardedHeader, $matches);
-            $forwardedClientIps = $matches[3];
-
-            $forwardedClientIps = $this->normalizeAndFilterClientIps($forwardedClientIps, $ip);
-            $clientIps = $forwardedClientIps;
+            $clientIps = $matches[3];
+        } elseif (self::$trustedHeaders[self::HEADER_CLIENT_IP] && $this->headers->has(self::$trustedHeaders[self::HEADER_CLIENT_IP])) {
+            $clientIps = array_map('trim', explode(',', $this->headers->get(self::$trustedHeaders[self::HEADER_CLIENT_IP])));
         }
 
-        if ($hasTrustedClientIpHeader) {
-            $xForwardedForClientIps = array_map('trim', explode(',', $this->headers->get(self::$trustedHeaders[self::HEADER_CLIENT_IP])));
+        $clientIps[] = $ip; // Complete the IP chain with the IP the request actually came from
+        $firstTrustedIp = null;
 
-            $xForwardedForClientIps = $this->normalizeAndFilterClientIps($xForwardedForClientIps, $ip);
-            $clientIps = $xForwardedForClientIps;
+        foreach ($clientIps as $key => $clientIp) {
+            // Remove port (unfortunately, it does happen)
+            if (preg_match('{((?:\d+\.){3}\d+)\:\d+}', $clientIp, $match)) {
+                $clientIps[$key] = $clientIp = $match[1];
+            }
+
+            if (!filter_var($clientIp, FILTER_VALIDATE_IP)) {
+                unset($clientIps[$key]);
+
+                continue;
+            }
+
+            if (IpUtils::checkIp($clientIp, self::$trustedProxies)) {
+                unset($clientIps[$key]);
+
+                // Fallback to this when the client IP falls into the range of trusted proxies
+                if (null ===  $firstTrustedIp) {
+                    $firstTrustedIp = $clientIp;
+                }
+            }
         }
 
-        if ($hasTrustedForwardedHeader && $hasTrustedClientIpHeader && $forwardedClientIps !== $xForwardedForClientIps) {
-            throw new ConflictingHeadersException('The request has both a trusted Forwarded header and a trusted Client IP header, conflicting with each other with regards to the originating IP addresses of the request. This is the result of a misconfiguration. You should either configure your proxy only to send one of these headers, or configure Symfony to distrust one of them.');
-        }
-
-        if (!$hasTrustedForwardedHeader && !$hasTrustedClientIpHeader) {
-            return $this->normalizeAndFilterClientIps(array(), $ip);
-        }
-
-        return $clientIps;
+        // Now the IP chain contains only untrusted proxies and the client IP
+        return $clientIps ? array_reverse($clientIps) : array($firstTrustedIp);
     }
 
     /**
@@ -1396,7 +1402,7 @@ class Request
     /**
      * Sets the request format.
      *
-     * @param string $format The request format
+     * @param string $format The request format.
      */
     public function setRequestFormat($format)
     {
@@ -1460,7 +1466,7 @@ class Request
     /**
      * Checks if the request method is of specified type.
      *
-     * @param string $method Uppercase request method (GET, POST etc)
+     * @param string $method Uppercase request method (GET, POST etc).
      *
      * @return bool
      */
@@ -1476,7 +1482,7 @@ class Request
      */
     public function isMethodSafe()
     {
-        return in_array($this->getMethod(), array('GET', 'HEAD', 'OPTIONS', 'TRACE'));
+        return in_array($this->getMethod(), array('GET', 'HEAD'));
     }
 
     /**
@@ -1484,7 +1490,7 @@ class Request
      *
      * @param bool $asResource If true, a resource will be returned
      *
-     * @return string|resource The request body content or a resource to read the body stream
+     * @return string|resource The request body content or a resource to read the body stream.
      *
      * @throws \LogicException
      */
@@ -1929,36 +1935,5 @@ class Request
     private function isFromTrustedProxy()
     {
         return self::$trustedProxies && IpUtils::checkIp($this->server->get('REMOTE_ADDR'), self::$trustedProxies);
-    }
-
-    private function normalizeAndFilterClientIps(array $clientIps, $ip)
-    {
-        $clientIps[] = $ip; // Complete the IP chain with the IP the request actually came from
-        $firstTrustedIp = null;
-
-        foreach ($clientIps as $key => $clientIp) {
-            // Remove port (unfortunately, it does happen)
-            if (preg_match('{((?:\d+\.){3}\d+)\:\d+}', $clientIp, $match)) {
-                $clientIps[$key] = $clientIp = $match[1];
-            }
-
-            if (!filter_var($clientIp, FILTER_VALIDATE_IP)) {
-                unset($clientIps[$key]);
-
-                continue;
-            }
-
-            if (IpUtils::checkIp($clientIp, self::$trustedProxies)) {
-                unset($clientIps[$key]);
-
-                // Fallback to this when the client IP falls into the range of trusted proxies
-                if (null === $firstTrustedIp) {
-                    $firstTrustedIp = $clientIp;
-                }
-            }
-        }
-
-        // Now the IP chain contains only untrusted proxies and the client IP
-        return $clientIps ? array_reverse($clientIps) : array($firstTrustedIp);
     }
 }

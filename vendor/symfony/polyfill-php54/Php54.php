@@ -31,6 +31,12 @@ final class Php54
             return false;
         }
 
-        return pack('H*', $data);
+        $data = pack('H*', $data);
+
+        if (false !== strpos($data, "\0")) {
+            return false;
+        }
+
+        return $data;
     }
 }

@@ -211,3 +211,4 @@ interface vfsStreamContent
      */
     public function url();
 }
+?>

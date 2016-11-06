@@ -17,6 +17,8 @@ class Alias
     private $public;
 
     /**
+     * Constructor.
+     *
      * @param string $id     Alias identifier
      * @param bool   $public If this alias is public
      */

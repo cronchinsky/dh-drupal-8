@@ -62,3 +62,4 @@ abstract class vfsStreamAbstractVisitor implements vfsStreamVisitor
         return $this->visitFile($block);
     }
 }
+?>

@@ -26,6 +26,8 @@ class ParameterBag implements ParameterBagInterface
     protected $resolved = false;
 
     /**
+     * Constructor.
+     *
      * @param array $parameters An array of parameters
      */
     public function __construct(array $parameters = array())
@@ -54,7 +56,9 @@ class ParameterBag implements ParameterBagInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Gets the service container parameters.
+     *
+     * @return array An array of parameters
      */
     public function all()
     {
@@ -62,7 +66,13 @@ class ParameterBag implements ParameterBagInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Gets a service container parameter.
+     *
+     * @param string $name The parameter name
+     *
+     * @return mixed The parameter value
+     *
+     * @throws ParameterNotFoundException if the parameter is not defined
      */
     public function get($name)
     {
@@ -99,7 +109,11 @@ class ParameterBag implements ParameterBagInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Returns true if a parameter name is defined.
+     *
+     * @param string $name The parameter name
+     *
+     * @return bool true if the parameter name is defined, false otherwise
      */
     public function has($name)
     {
@@ -117,7 +131,7 @@ class ParameterBag implements ParameterBagInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Replaces parameter placeholders (%name%) by their values for all parameters.
      */
     public function resolve()
     {
@@ -252,9 +266,6 @@ class ParameterBag implements ParameterBagInterface
         return $value;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function unescapeValue($value)
     {
         if (is_string($value)) {

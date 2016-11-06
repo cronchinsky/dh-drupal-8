@@ -17,3 +17,4 @@ class vfsStreamException extends \Exception
 {
     // intentionally empty
 }
+?>

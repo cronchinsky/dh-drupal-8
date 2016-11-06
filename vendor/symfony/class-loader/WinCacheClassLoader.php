@@ -60,8 +60,8 @@ class WinCacheClassLoader
     /**
      * Constructor.
      *
-     * @param string $prefix    The WinCache namespace prefix to use
-     * @param object $decorated A class loader object that implements the findFile() method
+     * @param string $prefix    The WinCache namespace prefix to use.
+     * @param object $decorated A class loader object that implements the findFile() method.
      *
      * @throws \RuntimeException
      * @throws \InvalidArgumentException
@@ -123,10 +123,8 @@ class WinCacheClassLoader
      */
     public function findFile($class)
     {
-        $file = wincache_ucache_get($this->prefix.$class, $success);
-
-        if (!$success) {
-            wincache_ucache_set($this->prefix.$class, $file = $this->decorated->findFile($class) ?: null, 0);
+        if (false === $file = wincache_ucache_get($this->prefix.$class)) {
+            wincache_ucache_set($this->prefix.$class, $file = $this->decorated->findFile($class), 0);
         }
 
         return $file;

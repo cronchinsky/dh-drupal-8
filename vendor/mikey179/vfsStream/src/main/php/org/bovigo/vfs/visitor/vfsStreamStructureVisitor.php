@@ -109,3 +109,4 @@ class vfsStreamStructureVisitor extends vfsStreamAbstractVisitor
         return $this;
     }
 }
+?>

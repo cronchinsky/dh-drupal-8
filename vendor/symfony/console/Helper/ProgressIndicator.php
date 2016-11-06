@@ -11,8 +11,6 @@
 
 namespace Symfony\Component\Console\Helper;
 
-use Symfony\Component\Console\Exception\InvalidArgumentException;
-use Symfony\Component\Console\Exception\LogicException;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -55,7 +53,7 @@ class ProgressIndicator
         $indicatorValues = array_values($indicatorValues);
 
         if (2 > count($indicatorValues)) {
-            throw new InvalidArgumentException('Must have at least 2 indicator value characters.');
+            throw new \InvalidArgumentException('Must have at least 2 indicator value characters.');
         }
 
         $this->format = self::getFormatDefinition($format);
@@ -120,7 +118,7 @@ class ProgressIndicator
     public function start($message)
     {
         if ($this->started) {
-            throw new LogicException('Progress indicator already started.');
+            throw new \LogicException('Progress indicator already started.');
         }
 
         $this->message = $message;
@@ -139,7 +137,7 @@ class ProgressIndicator
     public function advance()
     {
         if (!$this->started) {
-            throw new LogicException('Progress indicator has not yet been started.');
+            throw new \LogicException('Progress indicator has not yet been started.');
         }
 
         if (!$this->output->isDecorated()) {
@@ -166,7 +164,7 @@ class ProgressIndicator
     public function finish($message)
     {
         if (!$this->started) {
-            throw new LogicException('Progress indicator has not yet been started.');
+            throw new \LogicException('Progress indicator has not yet been started.');
         }
 
         $this->message = $message;

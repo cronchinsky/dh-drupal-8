@@ -43,12 +43,12 @@ class ClassCollectionLoader
 
         self::$loaded[$name] = true;
 
-        if ($adaptive) {
-            $declared = array_merge(get_declared_classes(), get_declared_interfaces());
-            if (function_exists('get_declared_traits')) {
-                $declared = array_merge($declared, get_declared_traits());
-            }
+        $declared = array_merge(get_declared_classes(), get_declared_interfaces());
+        if (function_exists('get_declared_traits')) {
+            $declared = array_merge($declared, get_declared_traits());
+        }
 
+        if ($adaptive) {
             // don't include already declared classes
             $classes = array_diff($classes, $declared);
 
@@ -87,16 +87,10 @@ class ClassCollectionLoader
             }
         }
 
-        if (!$reload && file_exists($cache)) {
+        if (!$reload && is_file($cache)) {
             require_once $cache;
 
             return;
-        }
-        if (!$adaptive) {
-            $declared = array_merge(get_declared_classes(), get_declared_interfaces());
-            if (function_exists('get_declared_traits')) {
-                $declared = array_merge($declared, get_declared_traits());
-            }
         }
 
         $files = array();

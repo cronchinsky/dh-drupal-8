@@ -264,3 +264,4 @@ class vfsStreamDirectory extends vfsStreamAbstractContent implements vfsStreamCo
         return false;
     }
 }
+?>
