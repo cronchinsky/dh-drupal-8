@@ -515,20 +515,14 @@ body {  }
   /* max-width: 30%; */
 }
 #block-integrarte-branding img {
+		margin-top: 5px;
 		max-width: 100%;
 		height: auto;
 }
 
-
-@media (max-width: 768px) {
-	#block-integrarte-branding  {
-	  max-width: 40%;
-	}
-}
-
 .navbar.mini-nav {
     height: 117px;
-    box-shadow: 0 5px 5px rgba(50, 50, 50, 0.75)
+    box-shadow: 0 5px 5px rgba(50, 50, 50, 0.75);
 }
 
 #content {
@@ -537,9 +531,32 @@ body {  }
 	padding-bottom: 30px;
 }
 
-#toolbar-administration {
+@media (min-width:960px) and (max-width:1024px) {
+	#block-integrarte-branding img {
+		max-width: 80%;
+		height: auto;
+	}
+}
+
+@media (max-width:1024px) {
+	.navbar.mini-nav {
+    height: 100px;
+ 	}
+ 	#content {
+		margin-top: 100px;
+	}
+}
+
+#toolbar-administration{
 	display: none;
 }
+
+/*
+body.toolbar-tray-open.toolbar-vertical.toolbar-fixed  {
+	margin: 0;
+}
+*/
+
 
 
 /* front page slider */
@@ -548,7 +565,7 @@ body {  }
     position: absolute;
     top: 100px;
     left: 100px;
-    width: 450px; 
+    width: 500px; 
     
 }
 .view-front-slideshow .views-field-title a {
@@ -717,18 +734,21 @@ li a,
 	padding-top: 20px;
 }
 
-#block-integrarteopenclass .field--name-field-video {
+#block-integrarteopenclass .field--name-field-video
+ {
 	padding: 20px 20px 20px 0;
   float: left;
 }
 
-#block-summerprogram2016video .field--name-field-video iframe {
+#block-summerprogram2016video .field--name-field-video iframe,
+#block-integrartenewplace .field--name-field-video iframe {
 	margin: 30px auto;
 	display: block;
 }
 
 @media (max-width: 768px) {
 	#block-integrarteopenclass .field--name-field-video,
+	#block-integrartenewplace .field--name-field-video,
 	#block-summerprogram2016video .field--name-field-video {
 	  float: none;
 	  position: relative;
@@ -740,6 +760,7 @@ li a,
 
 @media (max-width: 768px) {
 	#block-integrarteopenclass .field--name-field-video iframe,
+	#block-integrartenewplace .field--name-field-video iframe,
 	#block-summerprogram2016video .field--name-field-video iframe {
 		position: absolute;
 		top: 0;
@@ -748,6 +769,7 @@ li a,
 		height: 100%;
 	}
 }
+
 
 #block-integrarteopenclass .field--name-body {
 	text-align: center;
@@ -871,13 +893,23 @@ article.node--type-calendar-event .field--name-field-image {
 	margin: 0 0 30px 30px;
 }
 
-#block-masterclasspaypay {
+#block-masterclasspaypay,
+#block-paypalbaroquedancerepertoryworkshop,
+#block-paypalpayment {
 	clear: left;
+	margin-top: 20px;
 }
 
-#block-baroquedancepayment {
+.dropbutton-widget {
+	margin-top: 10px;
+	margin-bottom: 20px;
+}
+
+/*
+#block-paypalpayment {
 	margin-top: 60px;
 }
+*/
 
 /* Class type */
 .node--type-class-description > h2 {

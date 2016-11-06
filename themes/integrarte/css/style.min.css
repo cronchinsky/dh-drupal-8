@@ -327,6 +327,16 @@ border-top-color: #29a9df!important;
   font-size: 30px;
   text-transform:capitalize;
 }
+@media (max-width: 1024px) {
+	#page-title #page-title-inner h2, 
+	#page-title #page-title-inner h1 {
+    font-size: 22px;
+    padding: 5px 20px 5px !important;
+    margin-top: 0;
+    margin-bottom: 0;
+    line-height: 22px
+	}
+}
 #page-title #page-title-inner h1:before,#page-title #page-title-inner h2:before {
   content: "\f00a";
   font-family: FontAwesome;
@@ -2034,7 +2044,7 @@ a.facebook-icon {
     width: 24%}
 }@media only screen and (min-width:960px) and (max-width:1199px) {
   .navbar .nav>li>a {
-    padding: 22px 10px;
+    padding: 10px;
   }
   .flexslider.home {
     min-height: 300px;
