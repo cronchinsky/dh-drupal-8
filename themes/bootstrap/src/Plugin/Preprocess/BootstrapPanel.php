@@ -9,6 +9,7 @@ namespace Drupal\bootstrap\Plugin\Preprocess;
 use Drupal\bootstrap\Annotation\BootstrapPreprocess;
 use Drupal\bootstrap\Utility\Element;
 use Drupal\bootstrap\Utility\Variables;
+use Drupal\Component\Render\MarkupInterface;
 use Drupal\Component\Utility\Html;
 
 /**
@@ -60,7 +61,7 @@ class BootstrapPanel extends PreprocessBase implements PreprocessInterface {
       'errors' => 'errors',
       'footer' => 'footer',
       'required' => 'required',
-      'panel_state' => 'panel_state',
+      'panel_type' => 'panel_type',
       'title' => 'heading',
       'title_attributes' => 'heading_attributes',
     ];
@@ -114,6 +115,12 @@ class BootstrapPanel extends PreprocessBase implements PreprocessInterface {
           ], 'heading_attributes');
         }
       }
+    }
+
+    // Ensure we render HTML from heading.
+    $heading = $variables->offsetGet('heading');
+    if ($heading && (is_string($heading) || ($heading instanceof MarkupInterface))) {
+      $variables->offsetSet('heading', ['#markup' => $heading]);
     }
 
     // Ensure there is a valid panel state.
