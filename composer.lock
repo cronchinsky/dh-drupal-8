@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "d599831205a01fe4a9273088987d6614",
-    "content-hash": "f3d0ecbbd6160db8d360dddc7878b7c4",
+    "hash": "63346f6cd96b4c347b3ff8f2deb1cb3f",
+    "content-hash": "3893bf9a82640ea602e8eb1076909d91",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -808,7 +808,7 @@
             "dist": {
                 "type": "zip",
                 "url": "https://ftp.drupal.org/files/projects/address-8.x-1.0-rc3.zip",
-                "reference": null,
+                "reference": "8.x-1.0-rc3",
                 "shasum": "64d0c0e3421a98cb4ddb7dfe84ac46379e0ed4f5"
             },
             "require": {

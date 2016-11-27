@@ -4551,7 +4551,7 @@
         "dist": {
             "type": "zip",
             "url": "https://ftp.drupal.org/files/projects/address-8.x-1.0-rc3.zip",
-            "reference": null,
+            "reference": "8.x-1.0-rc3",
             "shasum": "64d0c0e3421a98cb4ddb7dfe84ac46379e0ed4f5"
         },
         "require": {
