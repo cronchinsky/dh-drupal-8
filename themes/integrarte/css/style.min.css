@@ -1707,7 +1707,8 @@ li.current {
 }
 #footer-menu #footer-menu-links {
   display: block;
-  float: right;
+  /* float: right; */
+  text-align: center;
 }
 #footer-menu #footer-menu-links ul {
   list-style: disc;

@@ -1005,10 +1005,10 @@ article.node--type-class-type {
 
 /* hacks to hide the time for all day notices */
 #content_field_date_on_calendar-2016-11-24-0 .datetime,
-#content_field_date_on_calendar-2016-12-16-0 .datetime,
 #content_field_date_on_calendar-2016-11-26-0 .datetime,
 #content_field_date_on_calendar-2016-12-30-0 .datetime,
 #content_field_date_on_calendar-2016-12-31-0 .datetime,
+#content_field_date_on_calendar-2017-01-02-0 .datetime,
 #content_field_date_on_calendar-2016-12-17-0 div.inner div.item:first-child  .datetime {
 	display: none;
 }
