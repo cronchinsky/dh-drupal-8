@@ -139,10 +139,10 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
  $send = true;
  $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
  if ($result['result'] !== true) {
-   drupal_set_message(t('There was a problem sending your message and it was not sent.'), 'error');
+   drupal_set_message(t('There was a problem notifying INTEGRARTE.'), 'error');
  }
  else {
-   drupal_set_message(t('Your message has been sent.'));
+   drupal_set_message(t('Thank You! INTEGRARTE has be notified with your information.'));
    //dsm($params);
  }
 }
