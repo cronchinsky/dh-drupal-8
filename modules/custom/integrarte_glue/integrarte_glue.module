@@ -94,7 +94,7 @@ function integrarte_glue_mail_alter(&$message) {
 * Implements hook_entity_insert().
 */
 function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
-
+ //dsm($entity->toArray());
  if ($entity->getEntityTypeId() !== 'node' || ($entity->getEntityTypeId() === 'node' && $entity->bundle() !== 'application')) {
    return;
  }
@@ -103,6 +103,14 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
  $key = 'create_application';
  $system_site_config = \Drupal::config('system.site');
  $to = $system_site_config->get('mail');
+ 
+ $allowed_values = $entity->getFieldDefinition('field_dates_of_attendance')->getFieldStorageDefinition()->getSetting('allowed_values');
+ $attendance_value = $entity->get('field_dates_of_attendance')->value;
+ $attendance = $allowed_values[$attendance_value];
+ 
+ $allowed_values = $entity->getFieldDefinition('field_gender')->getFieldStorageDefinition()->getSetting('allowed_values');
+ $gender_value = $entity->get('field_gender')->value;
+ $gender = $allowed_values[$gender_value];
 
  // Load the current user.
  $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
@@ -115,6 +123,14 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
  $url = $url->toString();
 
  $params['message'] = '<p>Name: ' . $first . ' ' . $last . '</p>' . 
+ 											'<p>Dates of Attendance: ' . $attendance . '</p>' .
+  										'<p>Date of Birth: ' . $entity->get('field_date_of_birth')->value . '</p>' .
+ 											'<p>Height: ' . $entity->get('field_height')->value . '</p>' .
+ 											'<p>Weight: ' . $entity->get('field_human_weight')->value . '</p>' .
+ 											'<p>Gender: ' . $gender . '</p>' .
+ 											'<p>Current School: ' . $entity->get('field_current_school')->value . '</p>' .
+ 											'<p>Years: ' . $entity->get('field_years')->value . '</p>' .
+ 											'<p>Level: ' . $entity->get('field_level')->value . '</p>' .
  										  '<p>Notes: ' . $entity->get('field_notes')->value . '</p>' .
  										  '<p>View Application: ' . $url . '</p>' ;
  $params['subject'] = t('Summer Application Submitted: ') . $first . ' ' . $last;
@@ -127,5 +143,6 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
  }
  else {
    drupal_set_message(t('Your message has been sent.'));
+   //dsm($params);
  }
 }
