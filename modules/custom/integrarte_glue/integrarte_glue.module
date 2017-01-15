@@ -73,26 +73,51 @@ function integrarte_glue_mail($key, &$message, $params) {
  switch ($key) {
    case 'create_application':
      $message['from'] = \Drupal::config('system.site')->get('mail');
-     $message['subject'] = t('Applicate created: @title', array('@title' => $params['node_title']), $options);
+     $message['subject'] = t('@title', array('@title' => $params['subject']), $options);
      $message['body'][] = $params['message'];
      break;
  }
 }
 
 /**
+ * Implements hook_mail_alter().
+ */
+function integrarte_glue_mail_alter(&$message) {
+  switch ($message['key']) {
+    case 'node_insert':
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed; delsp=yes';
+      break;
+  }
+}
+
+/**
 * Implements hook_entity_insert().
 */
 function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
+
  if ($entity->getEntityTypeId() !== 'node' || ($entity->getEntityTypeId() === 'node' && $entity->bundle() !== 'application')) {
    return;
  }
  $mailManager = \Drupal::service('plugin.manager.mail');
  $module = 'integrarte_glue';
  $key = 'create_application';
- $to = \Drupal::currentUser()->getEmail();
- $params['message'] = $entity->get('field_program')->value . '/n' .
- 										  $entity->get('field_notes')->value .
- 										  $entity->get('nid')->value;
+ $system_site_config = \Drupal::config('system.site');
+ $to = $system_site_config->get('mail');
+
+ // Load the current user.
+ $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+ $first = $user->get('field_first_name')->value;
+ $last = $user->get('field_last')->value;
+ 
+ $nid = $entity->get('nid')->value;
+ $options = ['absolute' => TRUE];
+ $url = \Drupal\Core\Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+ $url = $url->toString();
+
+ $params['message'] = '<p>Name: ' . $first . ' ' . $last . '</p>' . 
+ 										  '<p>Notes: ' . $entity->get('field_notes')->value . '</p>' .
+ 										  '<p>View Application: ' . $url . '</p>' ;
+ $params['subject'] = t('Summer Application Submitted: ') . $first . ' ' . $last;
  $params['node_title'] = $entity->label();
  $langcode = \Drupal::currentUser()->getPreferredLangcode();
  $send = true;
