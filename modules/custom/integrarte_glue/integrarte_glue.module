@@ -62,3 +62,45 @@ function integrarte_glue_node_presave(EntityInterface $node) {
 	    $node->title->value = 'Summer Registration: ' . $name;
     }
 }
+
+/**
+* Implements hook_mail().
+*/
+function integrarte_glue_mail($key, &$message, $params) {
+ $options = array(
+   'langcode' => $message['langcode'],
+ );
+ switch ($key) {
+   case 'create_application':
+     $message['from'] = \Drupal::config('system.site')->get('mail');
+     $message['subject'] = t('Applicate created: @title', array('@title' => $params['node_title']), $options);
+     $message['body'][] = $params['message'];
+     break;
+ }
+}
+
+/**
+* Implements hook_entity_insert().
+*/
+function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
+ if ($entity->getEntityTypeId() !== 'node' || ($entity->getEntityTypeId() === 'node' && $entity->bundle() !== 'application')) {
+   return;
+ }
+ $mailManager = \Drupal::service('plugin.manager.mail');
+ $module = 'integrarte_glue';
+ $key = 'create_application';
+ $to = \Drupal::currentUser()->getEmail();
+ $params['message'] = $entity->get('field_program')->value . '/n' .
+ 										  $entity->get('field_notes')->value .
+ 										  $entity->get('nid')->value;
+ $params['node_title'] = $entity->label();
+ $langcode = \Drupal::currentUser()->getPreferredLangcode();
+ $send = true;
+ $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+ if ($result['result'] !== true) {
+   drupal_set_message(t('There was a problem sending your message and it was not sent.'), 'error');
+ }
+ else {
+   drupal_set_message(t('Your message has been sent.'));
+ }
+}
