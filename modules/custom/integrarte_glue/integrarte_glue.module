@@ -35,11 +35,13 @@ function integrarte_glue_form_alter(&$form, &$form_state, $form_id) {
 function integrarte_glue_application_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
     //drupal_set_message('we sent a form woohoo');
     $form_state->setRedirect('integrarte_glue.application_submitted');
+    return;
 }
 
 function integrarte_glue_registration_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
     //drupal_set_message('we sent a form woohoo');
     $form_state->setRedirect('integrarte_glue.registration_submitted');
+    return;
 }
 
 function integrarte_glue_node_presave(EntityInterface $node) {
@@ -92,6 +94,8 @@ function integrarte_glue_mail_alter(&$message) {
 
 /**
 * Implements hook_entity_insert().
+* 
+* Send an email to INTEGRARTE when an application is submitted
 */
 function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
  //dsm($entity->toArray());
