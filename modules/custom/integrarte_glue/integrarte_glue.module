@@ -74,6 +74,7 @@ function integrarte_glue_mail($key, &$message, $params) {
  );
  switch ($key) {
    case 'create_application':
+   case 'create_registration':
      $message['from'] = \Drupal::config('system.site')->get('mail');
      $message['subject'] = t('@title', array('@title' => $params['subject']), $options);
      $message['body'][] = $params['message'];
@@ -98,55 +99,65 @@ function integrarte_glue_mail_alter(&$message) {
 * Send an email to INTEGRARTE when an application is submitted
 */
 function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
- //dsm($entity->toArray());
- if ($entity->getEntityTypeId() !== 'node' || ($entity->getEntityTypeId() === 'node' && $entity->bundle() !== 'application')) {
-   return;
- }
- $mailManager = \Drupal::service('plugin.manager.mail');
- $module = 'integrarte_glue';
- $key = 'create_application';
- $system_site_config = \Drupal::config('system.site');
- $to = $system_site_config->get('mail');
- 
- $allowed_values = $entity->getFieldDefinition('field_dates_of_attendance')->getFieldStorageDefinition()->getSetting('allowed_values');
- $attendance_value = $entity->get('field_dates_of_attendance')->value;
- $attendance = $allowed_values[$attendance_value];
- 
- $allowed_values = $entity->getFieldDefinition('field_gender')->getFieldStorageDefinition()->getSetting('allowed_values');
- $gender_value = $entity->get('field_gender')->value;
- $gender = $allowed_values[$gender_value];
+	//dsm($entity->toArray());
+	if (($entity->getEntityTypeId() !== 'node') && ($entity->bundle() != 'application' || $entity->bundle() != 'registration')) {
+	 return;
+	}
+	$mailManager = \Drupal::service('plugin.manager.mail');
+	$module = 'integrarte_glue';
+	$key = 'create_' . $entity->bundle();
+	$system_site_config = \Drupal::config('system.site');
+	$to = $system_site_config->get('mail');
+	
+	$nid = $entity->get('nid')->value;
+	$options = ['absolute' => TRUE];
+	$url = \Drupal\Core\Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+	$url = $url->toString();
+	
+	// Load the current user.
+	$user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+	$first = $user->get('field_first_name')->value;
+	$last = $user->get('field_last')->value;
 
- // Load the current user.
- $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
- $first = $user->get('field_first_name')->value;
- $last = $user->get('field_last')->value;
- 
- $nid = $entity->get('nid')->value;
- $options = ['absolute' => TRUE];
- $url = \Drupal\Core\Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
- $url = $url->toString();
+	switch ($entity->bundle()) {
+		case 'application':	
+			$allowed_values = $entity->getFieldDefinition('field_dates_of_attendance')->getFieldStorageDefinition()->getSetting('allowed_values');
+			$attendance_value = $entity->get('field_dates_of_attendance')->value;
+			$attendance = $allowed_values[$attendance_value];
+			
+			$allowed_values = $entity->getFieldDefinition('field_gender')->getFieldStorageDefinition()->getSetting('allowed_values');
+			$gender_value = $entity->get('field_gender')->value;
+			$gender = $allowed_values[$gender_value];
+								
+			$params['message'] = 	'<p>Name: ' . $first . ' ' . $last . '</p>' . 
+														'<p>Dates of Attendance: ' . $attendance . '</p>' .
+														'<p>Date of Birth: ' . $entity->get('field_date_of_birth')->value . '</p>' .
+														'<p>Height: ' . $entity->get('field_height')->value . '</p>' .
+														'<p>Weight: ' . $entity->get('field_human_weight')->value . '</p>' .
+														'<p>Gender: ' . $gender . '</p>' .
+														'<p>Current School: ' . $entity->get('field_current_school')->value . '</p>' .
+														'<p>Years: ' . $entity->get('field_years')->value . '</p>' .
+														'<p>Level: ' . $entity->get('field_level')->value . '</p>' .
+													  '<p>Notes: ' . $entity->get('field_notes')->value . '</p>' .
+													  '<p>View Application: ' . $url . '</p>' ;
+			$params['subject'] = t('Summer Application Submitted: ') . $first . ' ' . $last;
+			break;
+		case 'registration':
+		  $params['message'] = 	'<p>Name: ' . $first . ' ' . $last . '</p>' . 
+														'<p>View Registration Details: ' . $url . '</p>' ;
 
- $params['message'] = '<p>Name: ' . $first . ' ' . $last . '</p>' . 
- 											'<p>Dates of Attendance: ' . $attendance . '</p>' .
-  										'<p>Date of Birth: ' . $entity->get('field_date_of_birth')->value . '</p>' .
- 											'<p>Height: ' . $entity->get('field_height')->value . '</p>' .
- 											'<p>Weight: ' . $entity->get('field_human_weight')->value . '</p>' .
- 											'<p>Gender: ' . $gender . '</p>' .
- 											'<p>Current School: ' . $entity->get('field_current_school')->value . '</p>' .
- 											'<p>Years: ' . $entity->get('field_years')->value . '</p>' .
- 											'<p>Level: ' . $entity->get('field_level')->value . '</p>' .
- 										  '<p>Notes: ' . $entity->get('field_notes')->value . '</p>' .
- 										  '<p>View Application: ' . $url . '</p>' ;
- $params['subject'] = t('Summer Application Submitted: ') . $first . ' ' . $last;
- $params['node_title'] = $entity->label();
- $langcode = \Drupal::currentUser()->getPreferredLangcode();
- $send = true;
- $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
- if ($result['result'] !== true) {
-   drupal_set_message(t('There was a problem notifying INTEGRARTE.'), 'error');
- }
- else {
-   drupal_set_message(t('Thank You! INTEGRARTE has be notified with your information.'));
-   //dsm($params);
- }
+			$params['subject'] = t('Summer Registration Submitted: ') . $first . ' ' . $last;
+			break;
+	}
+	$params['node_title'] = $entity->label();
+	$langcode = \Drupal::currentUser()->getPreferredLangcode();
+	$send = true;
+	$result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+	if ($result['result'] !== true) {
+		drupal_set_message(t('There was a problem notifying INTEGRARTE.'), 'error');
+	}
+	else {
+		drupal_set_message(t('Thank You! INTEGRARTE has be notified with your information.'));
+	//dsm($params);
+	}
 }
