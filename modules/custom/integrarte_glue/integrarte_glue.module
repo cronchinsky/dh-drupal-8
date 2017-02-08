@@ -100,8 +100,9 @@ function integrarte_glue_mail_alter(&$message) {
 */
 function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
 	//dsm($entity->toArray());
-	if (($entity->getEntityTypeId() !== 'node') && ($entity->bundle() != 'application' || $entity->bundle() != 'registration')) {
-	 return;
+	if ($entity->getEntityTypeId() !== 'node' || 
+		 ($entity->getEntityTypeId() === 'node' && $entity->bundle() !== 'application' && $entity->bundle() !== 'registration')) {
+   return(FALSE);
 	}
 	$mailManager = \Drupal::service('plugin.manager.mail');
 	$module = 'integrarte_glue';
