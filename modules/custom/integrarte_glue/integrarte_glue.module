@@ -32,13 +32,13 @@ function integrarte_glue_form_alter(&$form, &$form_state, $form_id) {
 
 }
 
-function integrarte_glue_application_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function integrarte_glue_application_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
     //drupal_set_message('we sent a form woohoo');
     $form_state->setRedirect('integrarte_glue.application_submitted');
     return;
 }
 
-function integrarte_glue_registration_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function integrarte_glue_registration_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
     //drupal_set_message('we sent a form woohoo');
     $form_state->setRedirect('integrarte_glue.registration_submitted');
     return;
@@ -123,8 +123,20 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
 	switch ($entity->bundle()) {
 		case 'application':	
 			$allowed_values = $entity->getFieldDefinition('field_dates_of_attendance')->getFieldStorageDefinition()->getSetting('allowed_values');
-			$attendance_value = $entity->get('field_dates_of_attendance')->value;
-			$attendance = $allowed_values[$attendance_value];
+			$weeks = array();
+		  $weeks = $entity->get('field_dates_of_attendance')->getValue();
+      $attendance  = '';
+      $first = true;
+      foreach($weeks as $week){
+        if ($first) {
+          $attendance = $allowed_values[$week["value"]];
+          $first = false;
+        } else {
+          $attendance .= ', ' . $allowed_values[$week["value"]];
+        }
+      }			
+			//$attendance_value = $entity->get('field_dates_of_attendance')->value;
+			//$attendance = $allowed_values[$attendance_value];
 			
 			$allowed_values = $entity->getFieldDefinition('field_gender')->getFieldStorageDefinition()->getSetting('allowed_values');
 			$gender_value = $entity->get('field_gender')->value;
