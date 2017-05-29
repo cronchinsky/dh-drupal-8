@@ -827,13 +827,18 @@ li a,
        text-align: center;
 }
 
+.field--name-field-gmap {
+	margin: 50px 0;
+	text-align: center;
+}
+
 /* faculty view */
 
 .view-integrarte-faculty img {
 	width: auto;
 	float: left;
 	margin-right: 45px;
-	margin-bottom: 25px;
+	margin-bottom: 45px;
 }
 
 .view-integrarte-faculty h2 {

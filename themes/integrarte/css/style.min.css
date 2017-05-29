@@ -1783,6 +1783,14 @@ li.current {
   line-height: 26px;
   text-transform: uppercase;
 }
+#block-integrarte-footer ul {
+  text-align: right;
+  margin-bottom: 0;
+}
+#block-integrarte-footer li {
+  display: inline-block;
+  margin:0 10px;
+}
 form#newsletter {
   color: #999;
   margin-left: 10px;
@@ -2060,12 +2068,12 @@ a.facebook-icon {
   #block-integrarte-branding  {
 	  width: 150px;
 	}
-}@media only screen and (min-width:768px) and (max-width:959px) {
+}@media only screen and (min-width:768px) and (max-width:1200px) {
   .navbar-brand {
     margin-left: 15px;
   }
   .navbar .nav>li>a {
-    font-size: 14px;
+    font-size: 16px;
     padding: 22px 7px;
   }
   ol li ol.childlist .comment-des {
