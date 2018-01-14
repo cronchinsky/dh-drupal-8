@@ -80,7 +80,7 @@ class EntityContentBase extends Entity {
   /**
    * {@inheritdoc}
    */
-  public function import(Row $row, array $old_destination_id_values = array()) {
+  public function import(Row $row, array $old_destination_id_values = []) {
     $this->rollbackAction = MigrateIdMapInterface::ROLLBACK_DELETE;
     $entity = $this->getEntity($row, $old_destination_id_values);
     if (!$entity) {
@@ -105,9 +105,9 @@ class EntityContentBase extends Entity {
    * @return array
    *   An array containing the entity ID.
    */
-  protected function save(ContentEntityInterface $entity, array $old_destination_id_values = array()) {
+  protected function save(ContentEntityInterface $entity, array $old_destination_id_values = []) {
     $entity->save();
-    return array($entity->id());
+    return [$entity->id()];
   }
 
   /**
@@ -149,6 +149,7 @@ class EntityContentBase extends Entity {
    *   An updated entity, or NULL if it's the same as the one passed in.
    */
   protected function updateEntity(EntityInterface $entity, Row $row) {
+    $empty_destinations = $row->getEmptyDestinationProperties();
     // By default, an update will be preserved.
     $rollback_action = MigrateIdMapInterface::ROLLBACK_PRESERVE;
 
@@ -171,6 +172,7 @@ class EntityContentBase extends Entity {
     // clone the row with an empty set of destination values, and re-add only
     // the specified properties.
     if (isset($this->configuration['overwrite_properties'])) {
+      $empty_destinations = array_intersect($empty_destinations, $this->configuration['overwrite_properties']);
       $clone = $row->cloneWithoutDestination();
       foreach ($this->configuration['overwrite_properties'] as $property) {
         $clone->setDestinationProperty($property, $row->getDestinationProperty($property));
@@ -183,6 +185,9 @@ class EntityContentBase extends Entity {
       if ($field instanceof TypedDataInterface) {
         $field->setValue($values);
       }
+    }
+    foreach ($empty_destinations as $field_name) {
+      $entity->$field_name = NULL;
     }
 
     $this->setRollbackAction($row->getIdMap(), $rollback_action);
