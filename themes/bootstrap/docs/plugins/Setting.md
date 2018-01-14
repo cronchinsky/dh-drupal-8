@@ -21,7 +21,8 @@ Create a file at `./THEMENAME/src/Plugin/Setting/THEMENAME/Accessibility/SkipLin
 with the following contents:
 
 ```php
-namespace Drupal\THEMENAME\Plugin\Setting\THEMENAME\Accessibility\SkipLink;
+<?php
+namespace Drupal\THEMENAME\Plugin\Setting\THEMENAME\Accessibility;
 
 use Drupal\bootstrap\Annotation\BootstrapSetting;
 use Drupal\bootstrap\Plugin\Setting\SettingBase;
@@ -109,7 +110,7 @@ Two useful examples to study:
 #### SettingBase::drupalSettings()
 
 This method provides a way for you to determine whether a theme setting should
-be added to the `drupalSettings` javascript variable. Please note that by
+be added to the `drupalSettings` JavaScript variable. Please note that by
 default this is set to `FALSE` to prevent any potentially sensitive information
 from being leaked.
 
