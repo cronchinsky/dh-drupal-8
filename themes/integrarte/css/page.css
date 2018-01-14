@@ -956,6 +956,11 @@ article.node--type-class-type {
 	font-size: 200% !important;
 }
 
+/* View performances */
+.view-performances a {
+	color: #890000;
+}
+
 /* Upcoming Classes: Schedule today */
 
 .view-schedule-today .view-footer {
