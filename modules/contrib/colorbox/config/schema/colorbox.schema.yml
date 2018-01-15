@@ -74,6 +74,9 @@ colorbox.settings:
         overlayclose:
           type: boolean
           label: 'Overlay close'
+        returnfocus:
+          type: boolean
+          label: 'Return focus'
         fixed:
           type: boolean
           label: 'Fixed'

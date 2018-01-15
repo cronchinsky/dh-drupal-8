@@ -5,8 +5,8 @@ hidden: true
 package: Testing
 # core: 8.x
 
-# Information added by Drupal.org packaging script on 2016-07-05
-version: '8.x-1.1'
+# Information added by Drupal.org packaging script on 2017-04-24
+version: '8.x-1.4'
 core: '8.x'
 project: 'colorbox'
-datestamp: 1467761941
+datestamp: 1493051361

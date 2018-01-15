@@ -34,6 +34,8 @@ class ColorboxJavascriptTest extends JavascriptTestBase {
   const COLORBOX_WAIT_TIMEOUT = 500;
 
   /**
+   * Node var.
+   *
    * @var \Drupal\node\NodeInterface
    */
   protected $node;
@@ -67,7 +69,9 @@ class ColorboxJavascriptTest extends JavascriptTestBase {
     $this->assertSession()->elementContains('css', '#colorbox', 'test.png');
 
     // Use alt captions.
-    entity_get_display('node', 'page', 'default')
+    \Drupal::entityTypeManager()
+      ->getStorage('entity_view_display')
+      ->load('node.page.default')
       ->setComponent('field_test_image', [
         'type' => 'colorbox',
         'settings' => ['colorbox_caption' => 'alt'],
@@ -84,7 +88,7 @@ class ColorboxJavascriptTest extends JavascriptTestBase {
   }
 
   /**
-   * Test the mobile detection
+   * Test the mobile detection.
    */
   public function testMobileDetection() {
     $this->changeSetting('advanced.mobile_detect', TRUE);
@@ -147,7 +151,9 @@ class ColorboxJavascriptTest extends JavascriptTestBase {
       'settings' => [],
     ]);
     $field_config->save();
-    entity_get_display('node', 'page', 'default')
+    \Drupal::entityTypeManager()
+      ->getStorage('entity_view_display')
+      ->load('node.page.default')
       ->setComponent('field_test_image', [
         'type' => 'colorbox',
         'settings' => [],
@@ -177,7 +183,7 @@ class ColorboxJavascriptTest extends JavascriptTestBase {
           'target_id' => $file_b->id(),
           'alt' => 'Image alt 2',
           'title' => 'Image title 2',
-        ]
+        ],
       ],
     ]);
   }
