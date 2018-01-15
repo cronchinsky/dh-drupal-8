@@ -49,7 +49,7 @@ class UnlimitedNumber extends FormElement {
    *   The processed element.
    */
   public static function processUnlimitedNumber(&$element, FormStateInterface $form_state, &$complete_form) {
-    $value = !empty($element['#default_value']) ? $element['#default_value'] : NULL;
+    $value = isset($element['#default_value']) ? $element['#default_value'] : NULL;
 
     $element['unlimited_number'] = [
       '#type' => 'radios',

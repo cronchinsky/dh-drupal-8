@@ -25,6 +25,7 @@ class UnlimitedNumberWidget extends NumberWidget {
    */
   public static function defaultSettings() {
     return [
+      'value_unlimited' => 0,
       'label_unlimited' => t('Unlimited'),
       'label_number' => t('Limited'),
     ] + parent::defaultSettings();
@@ -35,6 +36,13 @@ class UnlimitedNumberWidget extends NumberWidget {
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
     $element = parent::settingsForm($form, $form_state);
+
+    $element['value_unlimited'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Unlimited value'),
+      '#default_value' => $this->getSetting('value_unlimited'),
+      '#description' => $this->t('Internal number to use for unlimited.'),
+    ];
 
     $element['label_unlimited'] = [
       '#type' => 'textfield',
@@ -57,9 +65,12 @@ class UnlimitedNumberWidget extends NumberWidget {
    * {@inheritdoc}
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
+    $field_settings = $this->getFieldSettings();
+    $value_unlimited = $this->getUnlimitedValue();
+
     $value = isset($items[$delta]->value) ? $items[$delta]->value : NULL;
     if (isset($value)) {
-      $default_value = empty($value) ? UnlimitedNumber::UNLIMITED : $value;
+      $default_value = $value == $value_unlimited ? UnlimitedNumber::UNLIMITED : $value;
     }
     else {
       $default_value = NULL;
@@ -68,10 +79,11 @@ class UnlimitedNumberWidget extends NumberWidget {
     $form_element['unlimited_number'] = $element + [
       '#type' => 'unlimited_number',
       '#default_value' => $default_value,
-      '#min' => 1,
+      '#min' => is_numeric($field_settings['min']) ? $field_settings['min'] : 1,
+      '#max' => is_numeric($field_settings['max']) ? $field_settings['max'] : NULL,
       '#options' => [
         'unlimited' => $this->getSetting('label_unlimited'),
-        'limited' => $this->getSetting('label_limited'),
+        'limited' => $this->getSetting('label_number'),
       ],
       '#parents' => [$items->getName(), $delta, 'unlimited_number'],
     ];
@@ -87,11 +99,21 @@ class UnlimitedNumberWidget extends NumberWidget {
     foreach ($values as $value) {
       $number = $value['unlimited_number'];
       if ($value['unlimited_number'] == UnlimitedNumber::UNLIMITED) {
-        $number = 0;
+        $number = $this->getUnlimitedValue();
       }
       $new_values[]['value'] = $number;
     }
     return $new_values;
+  }
+
+  /**
+   * Get unlimited value from settings.
+   *
+   * @return integer
+   */
+  public function getUnlimitedValue() {
+    $value_unlimited_raw = $this->getSetting('value_unlimited');
+    return empty($value_unlimited_raw) ? 0 : $value_unlimited_raw;
   }
 
 }

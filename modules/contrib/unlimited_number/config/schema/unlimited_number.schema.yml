@@ -2,6 +2,9 @@ field.widget.settings.unlimited_number:
   type: mapping
   label: 'Unlimited number settings'
   mapping:
+    value_unlimited:
+      type: integer
+      label: 'Unlimited Value'
     label_unlimited:
       type: string
       label: 'Unlimited Label'
