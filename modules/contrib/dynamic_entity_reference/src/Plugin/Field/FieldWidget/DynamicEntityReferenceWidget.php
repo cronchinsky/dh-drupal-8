@@ -46,7 +46,7 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
     $referenced_entities = $items->referencedEntities();
 
     $settings = $this->getFieldSettings();
-    $labels = \Drupal::entityManager()->getEntityTypeLabels();
+    $labels = \Drupal::service('entity_type.repository')->getEntityTypeLabels();
     $available = DynamicEntityReferenceItem::getTargetTypes($settings);
     $cardinality = $items->getFieldDefinition()->getFieldStorageDefinition()->getCardinality();
     $target_type = $items->get($delta)->target_type ?: reset($available);
@@ -79,35 +79,42 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
 
     $element['#title'] = $this->t('Label');
 
-    $js_class = Html::cleanCssIdentifier("dynamic-entity-reference-{$items->getName()}[$delta][target_type]");
-    $entity_type = [
-      '#type' => 'select',
-      '#options' => array_intersect_key($labels, array_combine($available, $available)),
-      '#title' => $this->t('Entity type'),
-      '#default_value' => $target_type,
-      '#weight' => -50,
-      '#attributes' => [
-        'class' => [
-          'dynamic-entity-reference-entity-type',
-          $js_class,
+    if (count($available) > 1) {
+      $target_type_element = [
+        '#type' => 'select',
+        '#options' => array_intersect_key($labels, array_combine($available, $available)),
+        '#title' => $this->t('Entity type'),
+        '#default_value' => $target_type,
+        '#weight' => -50,
+        '#attributes' => [
+          'class' => [
+            'dynamic-entity-reference-entity-type',
+          ],
         ],
-      ],
-    ];
+      ];
+    }
+    else {
+      $target_type_element = [
+        '#type' => 'value',
+        '#value' => reset($available),
+      ];
+    }
 
     $form_element = [
       '#type' => 'container',
       '#attributes' => [
         'class' => ['container-inline'],
       ],
-      'target_type' => $entity_type,
+      'target_type' => $target_type_element,
       'target_id' => $element,
+      '#process' => [[$this, 'processFormElement']],
       '#attached' => [
         'library' => [
           'dynamic_entity_reference/drupal.dynamic_entity_reference_widget',
         ],
         'drupalSettings' => [
           'dynamic_entity_reference' => [
-            $js_class => $this->createAutoCompletePaths($available),
+            'auto_complete_paths' => $this->createAutoCompletePaths($available),
           ],
         ],
       ],
@@ -119,6 +126,29 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
       $form_element['#open'] = TRUE;
     }
     return $form_element;
+  }
+
+  /**
+   * Adds entity autocomplete paths to a form element.
+   *
+   * @param array $element
+   *   The form element.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   * @param array $complete_form
+   *   The complete form structure.
+   *
+   * @return array
+   *   The form element.
+   */
+  public static function processFormElement(array &$element, FormStateInterface $form_state, array &$complete_form) {
+    $name = implode('-', $element['#parents']);
+    $js_class = Html::cleanCssIdentifier("js-dynamic-entity-reference-{$name}-target_type");
+    $element['target_type']['#attributes']['class'][] = $js_class;
+    $auto_complete_paths = $element['#attached']['drupalSettings']['dynamic_entity_reference']['auto_complete_paths'];
+    unset($element['#attached']['drupalSettings']['dynamic_entity_reference']['auto_complete_paths']);
+    $element['#attached']['drupalSettings']['dynamic_entity_reference'][$js_class] = $auto_complete_paths;
+    return $element;
   }
 
   /**
@@ -213,7 +243,7 @@ class DynamicEntityReferenceWidget extends EntityReferenceAutocompleteWidget {
    * @return array
    *   Auto complete paths for all the referenceable target types.
    */
-  protected function createAutoCompletePaths($target_types) {
+  protected function createAutoCompletePaths(array $target_types) {
     $auto_complete_paths = [];
     $settings = $this->getFieldSettings();
     foreach ($target_types as $target_type) {

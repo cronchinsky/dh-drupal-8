@@ -7,8 +7,8 @@ dependencies:
   - dynamic_entity_reference
   - entity_test
 
-# Information added by Drupal.org packaging script on 2016-11-06
-version: '8.x-1.0-rc6'
+# Information added by Drupal.org packaging script on 2017-07-27
+version: '8.x-1.4'
 core: '8.x'
 project: 'dynamic_entity_reference'
-datestamp: 1478429957
+datestamp: 1501151044
