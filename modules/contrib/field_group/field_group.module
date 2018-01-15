@@ -5,13 +5,14 @@
  * Allows administrators to attach custom fields to fieldable types.
  */
 
-use Drupal\Component\Utility\Xss;
-use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Core\Entity\Entity\EntityViewDisplay;
-use Drupal\Core\Render\Element;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\ContentEntityFormInterface;
+use Drupal\Core\Entity\Display\EntityDisplayInterface;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
+use Drupal\Core\Entity\Entity\EntityViewDisplay;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\ConfirmFormInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 
 require_once __DIR__ . '/includes/helpers.inc';
 
@@ -21,7 +22,7 @@ require_once __DIR__ . '/includes/helpers.inc';
 function field_group_theme_registry_alter(&$theme_registry) {
 
   // Inject field_group_build_entity_groups in all entity theming functions.
-  $entity_info = Drupal::entityManager()->getDefinitions();
+  $entity_info = Drupal::entityTypeManager()->getDefinitions();
   $entity_types = array();
   foreach ($entity_info as $entity_type_id => $entity_type) {
     if ($route_name = $entity_type->get('field_ui_base_route')) {
@@ -33,6 +34,11 @@ function field_group_theme_registry_alter(&$theme_registry) {
     if (in_array($theme_hook, $entity_types) || (!empty($info['base hook']) && in_array($info['base hook'], $entity_types))) {
       $theme_registry[$theme_hook]['preprocess functions'][] = 'field_group_build_entity_groups';
     }
+  }
+
+  // ECK does not use the eck as theme function.
+  if (isset($theme_registry['eck_entity'])) {
+    $theme_registry['eck_entity']['preprocess functions'][] = 'field_group_build_entity_groups';
   }
 
 }
@@ -63,6 +69,51 @@ function field_group_theme() {
       'file' => 'templates/theme.inc',
     ),
   );
+}
+
+/**
+ * Implements hook_theme_suggestions_alter().
+ *
+ * @param array $suggestions
+ * @param array $variables
+ * @param $hook
+ */
+function field_group_theme_suggestions_alter(array &$suggestions, array $variables, $hook) {
+  switch ($hook) {
+    case 'horizontal_tabs':
+    case 'field_group_accordion_item':
+    case 'field_group_accordion':
+    case 'field_group_html_element':
+      $element = $variables['element'];
+
+      $name = $element['#group_name'];
+      $entity_type = $element['#entity_type'];
+      $bundle = $element['#bundle'];
+
+      $wrapper = '';
+      if (isset($element['#wrapper_element'])) {
+        $wrapper = $element['#wrapper_element'];
+        $suggestions[] = $hook . '__' . $wrapper;
+      }
+
+      $suggestions[] = $hook . '__' . $entity_type;
+      $suggestions[] = $hook . '__' . $bundle;
+      $suggestions[] = $hook . '__' . $name;
+
+      if ($wrapper) {
+        $suggestions[] = $hook . '__' . $entity_type . '__' . $wrapper;
+      }
+
+      $suggestions[] = $hook . '__' . $entity_type . '__' . $bundle;
+      $suggestions[] = $hook . '__' . $entity_type . '__' . $name;
+
+      if ($wrapper) {
+        $suggestions[] = $hook . '__' . $entity_type . '__' . $bundle . '__' . $wrapper;
+      }
+      $suggestions[] = $hook . '__' . $entity_type . '__' . $bundle . '__' . $name;
+      break;
+  }
+
 }
 
 /**
@@ -98,56 +149,87 @@ function field_group_field_info_max_weight($entity_type, $bundle, $context, $con
 }
 
 /**
- * Implements hook_field_attach_form().
- *
- * @todo Refactored in field_group_form_alter().
- * Remove this function afterwards. Decision has to be made about using
- * a pre_render callback or doing the nesting logic immediately in the alter.
- */
-function field_group_field_attach_form($entity_type, $entity, &$form, FormStateInterface $form_state, $langcode) {
-  $form['#attached']['library'][] = 'field_group/field_ui';
-  field_group_attach_groups($form, 'form', $form_state);
-  $form['#pre_render'][] = 'field_group_form_pre_render';
-}
-
-/**
  * Implements hook_form_alter().
  */
 function field_group_form_alter(array &$form, FormStateInterface $form_state) {
-  if ($form_state->getFormObject() instanceof ContentEntityFormInterface) {
+
+  $form_object = $form_state->getFormObject();
+  if ($form_object instanceof ContentEntityFormInterface && !$form_object instanceof ConfirmFormInterface) {
 
     /**
-     * @var \Drupal\Core\Entity\Display\EntityFormDisplayInterface $form_display
+     * @var EntityFormDisplayInterface $form_display
      */
-    $form_display = $form_state->getStorage()['form_display'];
-    $entity = $form_state->getFormObject()->getEntity();
+    $storage = $form_state->getStorage();
+    if (!empty($storage['form_display'])) {
+      $form_display = $storage['form_display'];
+      $entity = $form_object->getEntity();
 
-    $context = array(
-      'entity_type' => $entity->getEntityTypeId(),
-      'bundle' => $entity->bundle(),
-      'entity' => $entity,
-      'context' => 'form',
-      'display_context' => 'form',
-      'mode' => $form_display->getMode(),
-    );
+      $context = array(
+        'entity_type' => $entity->getEntityTypeId(),
+        'bundle' => $entity->bundle(),
+        'entity' => $entity,
+        'context' => 'form',
+        'display_context' => 'form',
+        'mode' => $form_display->getMode(),
+      );
 
-    field_group_attach_groups($form, $context);
-    $form['#pre_render'][] = 'field_group_form_pre_render';
+      field_group_attach_groups($form, $context);
+      $form['#pre_render'][] = 'field_group_form_pre_render';
+    }
   }
 
 }
 
 /**
- * Implements hook_entity_display_build_alter().
+ * Implements hook_inline_entity_form_entity_form_alter().
  */
-function field_group_entity_display_build_alter(&$element, $context) {
+function field_group_inline_entity_form_entity_form_alter(&$entity_form, FormStateInterface $form_state) {
 
-  $context['entity_type'] = $context['display']->getTargetEntityTypeId();
-  $context['bundle'] = $context['display']->getTargetBundle();
-  $context['mode'] = $context['display']->getMode();
-  $context['context'] = 'view';
+  // Attach the fieldgroups to current entity form.
+  $context = [
+    'entity_type' => $entity_form['#entity']->getEntityTypeId(),
+    'bundle' => $entity_form['#entity']->bundle(),
+    'entity' => $entity_form['#entity'],
+    'display_context' => 'form',
+    'mode' => isset($entity_form['#form_mode']) ? $entity_form['#form_mode'] : 'default',
+  ];
 
-  field_group_attach_groups($element, $context);
+  field_group_attach_groups($entity_form, $context);
+  $entity_form['#pre_render'][] = 'field_group_form_pre_render';
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function field_group_entity_view_alter(&$build, EntityInterface $entity, EntityDisplayInterface $display) {
+
+  $context = array(
+    'entity_type' => $display->getTargetEntityTypeId(),
+    'bundle' => $entity->bundle(),
+    'entity' => $entity,
+    'display_context' => 'view',
+    'mode' => $display->getMode(),
+  );
+
+  field_group_attach_groups($build, $context);
+
+  // If no theme hook, we have no theme hook to preprocess.
+  // Add a prerender.
+  if (empty($build['#theme'])) {
+
+    $ds_enabled = false;
+    if (Drupal::moduleHandler()->moduleExists('ds')) {
+      // Check if DS is enabled for this display.
+      if ($display->getThirdPartySetting('ds', 'layout') && !Drupal\ds\Ds::isDisabled()) {
+        $ds_enabled = true;
+      }
+    }
+
+    // If DS is enabled, no pre render is needed (DS adds fieldgroup preprocessing).
+    if (!$ds_enabled) {
+      $build['#pre_render'][] = 'field_group_entity_view_pre_render';
+    }
+  }
 }
 
 /**
@@ -160,6 +242,16 @@ function field_group_form_pre_render($element) {
     $element['#field_group_form_pre_render'] = TRUE;
     field_group_build_entity_groups($element, 'form');
   }
+  return $element;
+}
+
+/**
+ * Pre render callback for rendering groups on entities without theme hook.
+ * @param $element
+ *   Entity being rendered.
+ */
+function field_group_entity_view_pre_render($element) {
+  field_group_build_entity_groups($element, 'view');
   return $element;
 }
 
@@ -177,25 +269,23 @@ function field_group_field_group_pre_render(&$element, &$group, &$rendering_obje
 
   // Add all field_group format types to the js settings.
   $element['#attached']['drupalSettings']['field_group'] = array(
-    $group->format_type => $group->mode,
+    $group->format_type => [
+      'mode' => $group->mode,
+      'context' => $group->context,
+      'settings' => $group->format_settings,
+    ],
   );
 
   $element['#weight'] = $group->weight;
 
   // Call the pre render function for the format type.
-  $function = "field_group_pre_render_" . str_replace("-", "_", $group->format_type);
-  if (function_exists($function)) {
-    $function($element, $group, $rendering_object);
-  }
-  else {
-    $manager = \Drupal::service('plugin.manager.field_group.formatters');
-    $plugin = $manager->getInstance(array(
-      'format_type' => $group->format_type,
-      'configuration' => array('label' => $group->label, 'settings' => $group->format_settings),
-      'group' => $group,
-    ));
-    $plugin->preRender($element, $rendering_object);
-  }
+  $manager = Drupal::service('plugin.manager.field_group.formatters');
+  $plugin = $manager->getInstance(array(
+    'format_type' => $group->format_type,
+    'configuration' => array('label' => $group->label, 'settings' => $group->format_settings),
+    'group' => $group,
+  ));
+  $plugin->preRender($element, $rendering_object);
 
 }
 
@@ -222,21 +312,6 @@ function field_group_field_group_build_pre_render_alter(& $element) {
     field_group_remove_empty_form_groups('form', $element, $groups, $element['#fieldgroups'], $element['#entity_type']);
   }
 
-  // Move additional settings to the last multipage pane if configured that way.
-  // Note that multipages MUST be in the root of the form.
-  foreach (Element::children($element) as $name) {
-    if (isset($element[$name]['#type']) && $element[$name]['#type'] == 'multipage' && isset($element['additional_settings'])) {
-      $parent_group = $element['#fieldgroups'][$name];
-      $move_additional = isset($parent_group->format_settings['move_additional']) ? $parent_group->format_settings['move_additional'] : 1;
-      $last_pane = NULL;
-      foreach (Element::children($element[$name], TRUE) as $pane) {
-        $last_pane = $pane;
-      }
-      $element[$name][$last_pane]['additional_settings'] = $element['additional_settings'];
-      unset($element['additional_settings']);
-    }
-  }
-
 }
 
 /**
@@ -252,7 +327,7 @@ function field_group_attach_groups(&$element, $context) {
   $entity_type = $context['entity_type'];
   $bundle = $context['bundle'];
   $mode = $context['mode'];
-  $display_context = $context['context'];
+  $display_context = $context['display_context'];
 
   $element['#fieldgroups'] = field_group_info_groups($entity_type, $bundle, $display_context, $mode);
 
@@ -275,10 +350,11 @@ function field_group_attach_groups(&$element, $context) {
  * @see field_group_theme_registry_alter
  * @see field_group_fields_nest()
  * @param $vars preprocess vars or form element
- * @param $context The display context (form or view)
+ * @param $context The display context (entity type, form or view)
  * @return $element Array with re-arranged fields in groups.
  */
 function field_group_build_entity_groups(&$vars, $context = 'view') {
+
   if ($context == 'form') {
     $element = &$vars;
     $nest_vars = NULL;
@@ -290,6 +366,14 @@ function field_group_build_entity_groups(&$vars, $context = 'view') {
     elseif (isset($vars['content'])) {
       $element = &$vars['content'];
     }
+    else {
+      if ($context === 'eck_entity') {
+        $element = &$vars['entity'];
+      }
+      else {
+        $element = &$vars;
+      }
+    }
 
     $nest_vars = &$vars;
   }
@@ -300,7 +384,7 @@ function field_group_build_entity_groups(&$vars, $context = 'view') {
   }
 
   // Nest the fields in the corresponding field groups.
-  field_group_fields_nest($element, $nest_vars);
+  field_group_fields_nest($element, $nest_vars, $context);
 
   // Allow others to alter the pre_rendered build.
   Drupal::moduleHandler()->alter('field_group_build_pre_render', $element);
@@ -317,11 +401,11 @@ function field_group_build_entity_groups(&$vars, $context = 'view') {
 
   // Put groups inside content if we are rendering an entity_view.
   foreach ($element['#fieldgroups'] as $group) {
-    if (!empty($element[$group->group_name]) && $context != 'user_profile') {
-      $vars['content'][$group->group_name] = $element[$group->group_name];
-    }
-    elseif (!empty($element[$group->group_name])) {
-      $vars['user_profile'][$group->group_name] = $element[$group->group_name];
+    if (!empty($element[$group->group_name])) {
+      $key = field_group_get_content_element_key($context);
+      if (isset($vars[$key])) {
+        $vars[$key][$group->group_name] = $element[$group->group_name];
+      }
     }
   }
 
@@ -338,8 +422,10 @@ function field_group_build_entity_groups(&$vars, $context = 'view') {
  *   The current element to analyse for grouping.
  * @param Array $vars
  *   Rendering vars from the entity being viewed.
+ * @param Array $context
+ *   The display context (entity type, form or view).
  */
-function field_group_fields_nest(&$element, &$vars = NULL) {
+function field_group_fields_nest(&$element, &$vars = NULL, $context = NULL) {
 
   // Create all groups and keep a flat list of references to these groups.
   $group_references = array();
@@ -369,14 +455,11 @@ function field_group_fields_nest(&$element, &$vars = NULL) {
 
     // Entity being viewed
     if ($vars) {
-      // If not a group, check vars['content'] for empty field.
-      if (!isset($element['#fieldgroups'][$child_name]) && isset($vars['content'][$child_name])) {
-        $group_references[$parent_name][$child_name] = $vars['content'][$child_name];
-        unset($vars['content'][$child_name]);
-      }
-      elseif (!isset($element['#fieldgroups'][$child_name]) && isset($vars['user_profile'][$child_name])) {
-        $group_references[$parent_name][$child_name] = $vars['user_profile'][$child_name];
-        unset($vars['user_profile'][$child_name]);
+      // If not a group, check the content variable for empty field.
+      $key = field_group_get_content_element_key($context);
+      if (!isset($element['#fieldgroups'][$child_name]) && isset($vars[$key][$child_name])) {
+        $group_references[$parent_name][$child_name] = $vars[$key][$child_name];
+        unset($vars[$key][$child_name]);
       }
       // If this is a group, we have to use a reference to keep the reference
       // list intact (but if it is a field we don't mind).
@@ -447,25 +530,75 @@ function field_group_pre_render(& $element, $group, & $rendering_object) {
 }
 
 /**
- * Saves a group definition.
- * This function is called by ctools export when calls are made
- * through ctools_export_crud_save().
+ * Provides the content element key for a display context.
  *
- * @param $group
- *   A group definition.
- * @return \Drupal\Core\Entity\Display\EntityDisplayInterface || NULL
+ * This allows entity modules to specify their content element for field group
+ * support, or other modules to add entity module support.
+ *
+ * @param $context
+ *   The display context (entity type, form or view).
  */
-function field_group_group_save($group) {
-  if ($group->context == 'form') {
-    $display = EntityFormDisplay::load($group->entity_type . '.' . $group->bundle . '.' . $group->mode);
-  }
-  if ($group->context == 'view') {
-    $display = EntityViewDisplay::load($group->entity_type . '.' . $group->bundle . '.' . $group->mode);
+function field_group_get_content_element_key($context = 'default') {
+  $keys = &drupal_static('field_group_content_elements');
+  if (!isset($keys)) {
+    $keys['default'] = 'content';
+    // Allow other modules to alter the array.
+    Drupal::moduleHandler()->alter('field_group_content_element_keys', $keys);
   }
 
-  /**
-   * @var $display \Drupal\Core\Entity\Display\EntityDisplayInterface
-   */
+  // Check if we have a specific content element key for this entity type.
+  $key = $keys['default'];
+  if (isset($keys[$context])) {
+    $key = $keys[$context];
+  }
+  return $key;
+}
+
+
+/**
+ * Saves a group definition.
+ *
+ * This function is called by ctools export when calls are made through
+ * ctools_export_crud_save(). It's also used as an api method to add groups to a
+ * display.
+ *
+ * @param \stdClass $group
+ *   A group definition.
+ * @param \Drupal\Core\Entity\Display\EntityDisplayInterface $display
+ *   The display to update if known.
+ *
+ * @return \Drupal\Core\Entity\Display\EntityDisplayInterface|NULL
+ *   The updated entity display.
+ */
+function field_group_group_save($group, $display = NULL) {
+  if ($display === NULL) {
+    if ($group->context == 'form') {
+      $display = EntityFormDisplay::load($group->entity_type . '.' . $group->bundle . '.' . $group->mode);
+    }
+    elseif ($group->context == 'view') {
+      $display = EntityViewDisplay::load($group->entity_type . '.' . $group->bundle . '.' . $group->mode);
+    }
+  }
+
+  // If no display was found. It doesn't exist yet, create it.
+  if (!isset($display)) {
+    if ($group->context == 'form') {
+      $display = EntityFormDisplay::create(array(
+        'targetEntityType' => $group->entity_type,
+        'bundle' => $group->bundle,
+        'mode' => $group->mode,
+      ))->setStatus(TRUE);
+    }
+    elseif ($group->context == 'view') {
+      $display = EntityViewDisplay::create(array(
+        'targetEntityType' => $group->entity_type,
+        'bundle' => $group->bundle,
+        'mode' => $group->mode,
+      ))->setStatus(TRUE);
+    }
+
+  }
+
   if (isset($display)) {
     $data = (array) $group;
     unset($data['group_name'], $data['entity_type'], $data['bundle'], $data['mode'], $data['form'], $data['context']);
@@ -528,9 +661,8 @@ function field_group_info_groups($entity_type, $bundle, $context, $mode) {
     }
     $data = $display->getThirdPartySettings('field_group');
   }
-
   $groups = array();
-  if (isset($data)) {
+  if (isset($data) && is_array($data)) {
     foreach ($data as $group_name => $definition) {
       $definition += array(
         'group_name' => $group_name,
@@ -552,7 +684,7 @@ function field_group_info_groups($entity_type, $bundle, $context, $mode) {
  *   The name of the group.
  * @param $entity_type
  *   The name of the entity.
- * @param $bundle_name
+ * @param $bundle
  *   The name of the bundle.
  * @param $context
  *   The context of the view mode (form or view)
@@ -635,6 +767,7 @@ function field_group_remove_empty_form_groups($name, & $element, $groups, &$form
 
 /**
  * Remove empty groups on entity display.
+ *
  * @param array $element
  *   The element to check the empty state.
  * @param array $groups
@@ -645,8 +778,8 @@ function field_group_remove_empty_display_groups(& $element, $groups) {
   $empty_child = TRUE;
   $empty_group = TRUE;
 
-  // Loop through the children for current element.
-  foreach (Element::children($element) as $name) {
+  // Loop through the visible children for current element.
+  foreach (Element::getVisibleChildren($element) as $name) {
 
     // Descend if the child is a group.
     if (in_array($name, $groups)) {
@@ -655,12 +788,12 @@ function field_group_remove_empty_display_groups(& $element, $groups) {
         $empty_group = FALSE;
       }
     }
-    // Child is a field, the element is not empty and access is set to true (or empty).
+    // Child is a field or a renderable array and the element is not empty.
     elseif (!empty($element[$name])) {
-      $has_access = !isset($element[$name]['#access']) || $element[$name]['#access'];
-      $has_markup = isset($element[$name]['#markup']);
-      $has_items = isset($element[$name][0]);
-      if ($has_access && ($has_markup || $has_items)) {
+      $clone_element = $element[$name];
+      // Weight parameter can make empty element seen as not empty.
+      unset($clone_element['#weight']);
+      if (!Element::isEmpty($clone_element)) {
         $empty_group = FALSE;
       }
     }
@@ -669,7 +802,7 @@ function field_group_remove_empty_display_groups(& $element, $groups) {
 
   // Reset an empty group.
   if ($empty_group) {
-    $element = NULL;
+    $element = [];
   }
 
   return $empty_group;

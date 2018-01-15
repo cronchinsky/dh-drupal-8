@@ -1,14 +1,8 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\field_group\Plugin\field_group\FieldGroupFormatter\Div.
- */
-
 namespace Drupal\field_group\Plugin\field_group\FieldGroupFormatter;
 
 use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\field_group\FieldGroupFormatterBase;
 
 /**
@@ -33,7 +27,7 @@ class Fieldset extends FieldGroupFormatterBase {
 
     $element += array(
       '#type' => 'fieldset',
-      '#title' => SafeMarkup::checkPlain($this->t($this->getLabel())),
+      '#title' => Html::escape($this->t($this->getLabel())),
       '#pre_render' => array(),
       '#attributes' => array(),
     );
@@ -42,6 +36,12 @@ class Fieldset extends FieldGroupFormatterBase {
       $element += array(
         '#description' => $this->getSetting('description'),
       );
+
+      // When a fieldset has a description, an id is required.
+      if (!$this->getSetting('id')) {
+        $element['#id'] = Html::getId($this->group->group_name);
+      }
+
     }
 
     if ($this->getSetting('id')) {
@@ -52,6 +52,11 @@ class Fieldset extends FieldGroupFormatterBase {
     if (!empty($classes)) {
       $element['#attributes'] += array('class' => $classes);
     }
+
+    if ($this->getSetting('required_fields')) {
+      $element['#attached']['library'][] = 'field_group/formatter.fieldset';
+      $element['#attached']['library'][] = 'field_group/core';
+    }
   }
 
   /**
@@ -60,6 +65,13 @@ class Fieldset extends FieldGroupFormatterBase {
   public function settingsForm() {
 
     $form = parent::settingsForm();
+
+    $form['description'] = array(
+      '#title' => $this->t('Description'),
+      '#type' => 'textarea',
+      '#default_value' => $this->getSetting('description'),
+      '#weight' => -4,
+    );
 
     if ($this->context == 'form') {
       $form['required_fields'] = array(
