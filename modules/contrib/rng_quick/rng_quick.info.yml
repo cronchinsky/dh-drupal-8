@@ -6,8 +6,8 @@ package: RNG
 dependencies:
   - rng (>= 8.x-1.0)
 
-# Information added by Drupal.org packaging script on 2016-03-26
-version: '8.x-1.0-beta5'
+# Information added by Drupal.org packaging script on 2016-11-14
+version: '8.x-1.0'
 core: '8.x'
 project: 'rng_quick'
-datestamp: 1458986942
+datestamp: 1479130168

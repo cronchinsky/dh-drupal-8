@@ -111,7 +111,8 @@ class RegisterBlockForm extends FormBase {
       if (($event_meta->countProxyIdentities() - $self) > 0) {
         $form['actions']['other'] = [
           '#type' => 'submit',
-          '#value' => $this->t('Create registration for other person'),
+          // Don't use 'other' wording when it is the only option.
+          '#value' => $self ? $this->t('Create registration for other person') : $this->t('Create a registration'),
           '#submit' => array('::registerOther'),
           '#dropbutton' => 'register',
         ];
