@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\rng\Form\MessageListForm.
- */
-
 namespace Drupal\rng\Form;
 
 use Drupal\Core\Routing\RedirectDestinationInterface;
@@ -112,6 +107,7 @@ class MessageListForm extends FormBase {
     // Actions.
     $form['actions'] = [
       '#type' => 'details',
+      '#title' => $this->t('Operations'),
       '#attributes' => [
         'class' => ['container-inline'],
       ],

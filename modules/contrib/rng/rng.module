@@ -3,19 +3,9 @@
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Session\AccountInterface;
-use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\courier\ChannelInterface;
-use Drupal\courier\TemplateCollectionInterface;
-use Drupal\rng\Entity\RuleSchedule;
-use Drupal\rng\Entity\Registrant;
 use Drupal\rng\EventTypeInterface;
-use Drupal\rng\Exception\InvalidEventException;
-use Drupal\courier\Entity\TemplateCollection;
-use Drupal\rng\RuleInterface;
-use Drupal\rng\RuleComponentInterface;
-use Drupal\rng\Plugin\Action\CourierTemplateCollection;
 use Drupal\Core\Render\Element;
 
 /**
@@ -33,48 +23,9 @@ function rng_help($route_name, RouteMatchInterface $route_match) {
  * Implements hook_entity_access().
  */
 function rng_entity_access(EntityInterface $entity, $operation, AccountInterface $account) {
-  if ($operation == 'manage event') {
-    /** @var EventTypeInterface $event_type */
-    $event_type = \Drupal::service('rng.event_manager')
-      ->eventType($entity->getEntityTypeId(), $entity->bundle());
-    if ($event_type && $event_type->getEventManageOperation()) {
-      // Prevents recursion:
-      if ($event_type->getEventManageOperation() != 'manage event') {
-        if ($entity->access($event_type->getEventManageOperation(), $account)) {
-          return AccessResult::allowed()
-            ->addCacheableDependency($entity);
-        }
-      }
-    }
-  }
-
-  if ($operation == 'update') {
-    if ($entity instanceof ChannelInterface) {
-      if ($template_collection = TemplateCollection::getTemplateCollectionForTemplate($entity)) {
-        // Allow editing template if the user has 'manage event' for the event.
-        if ($owner = $template_collection->getOwner()) {
-          $event_manager = \Drupal::service('rng.event_manager');
-          /** @var \Drupal\rng\EventManagerInterface $event_manager */
-          if ($event_manager->isEvent($owner)) {
-            return AccessResult::allowedIf($owner->access('manage event'))
-              ->addCacheableDependency($owner);
-          }
-        }
-      }
-    }
-  }
-
-  if ($operation == 'templates' && $entity instanceof TemplateCollectionInterface) {
-    $owner = $entity->getOwner();
-    /** @var \Drupal\rng\EventManagerInterface $event_manager */
-    $event_manager = \Drupal::service('rng.event_manager');
-    if ($owner && $event_manager->isEvent($owner) && $owner->access('manage event')) {
-      return AccessResult::allowed()
-        ->addCacheableDependency($owner);
-    }
-  }
-
-  return AccessResult::neutral();
+  /** @var \Drupal\rng\RngEntityAccess $rng_access */
+  $rng_access = \Drupal::service('rng.entity.access');
+  return $rng_access->hook_entity_access($entity, $operation, $account);
 }
 
 /**
@@ -82,12 +33,9 @@ function rng_entity_access(EntityInterface $entity, $operation, AccountInterface
  */
 function rng_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'user_admin_permissions') {
-    // Disable registrations for anonymous users.
-    foreach ($form['permissions'] as $permission_id => &$permission) {
-      if (strstr($permission_id, 'rng register')) {
-        $permission['anonymous']['#disabled'] = TRUE;
-      }
-    }
+    // Anonymous 'user' cannot register himself because it is a fake user.
+    $form['permissions']['rng register self'][AccountInterface::ANONYMOUS_ROLE]['#disabled'] = TRUE;
+    $form['permissions']['rng register self'][AccountInterface::ANONYMOUS_ROLE]['#access'] = FALSE;
   }
 }
 
@@ -95,37 +43,9 @@ function rng_form_alter(&$form, FormStateInterface $form_state, $form_id) {
  * Implements hook_cron().
  */
 function rng_cron() {
-  // Add scheduled rules to be executed.
-  $queue = \Drupal::queue('rng_rule_scheduler');
-  $rule_scheduler_storage = \Drupal::entityTypeManager()
-    ->getStorage('rng_rule_scheduler');
-
-  $ids = $rule_scheduler_storage->getQuery()
-    ->condition('trigger_date', time(), '<=')
-    ->condition('in_queue', 0, '=')
-    ->condition('attempts', RuleSchedule::ATTEMPTS_MAX, '<=')
-    ->execute();
-
-  foreach ($rule_scheduler_storage->loadMultiple($ids) as $rule_schedule) {
-    /** @var \Drupal\rng\RuleScheduleInterface $rule_schedule */
-    $data = ['rule_scheduler_id' => $rule_schedule->id()];
-    if ($queue->createItem($data)) {
-      $rule_schedule->setInQueue(TRUE)->save();
-
-      // De-activate the rule once it is queued.
-      if ($component = $rule_schedule->getComponent()) {
-        if ($rule = $component->getRule()) {
-          $rule->setIsActive(FALSE)->save();
-        }
-      }
-    }
-  }
-
-  // Delete scheduled rules which have had too many attempts.
-  $ids = $rule_scheduler_storage->getQuery()
-    ->condition('attempts', RuleSchedule::ATTEMPTS_MAX, '>')
-    ->execute();
-  $rule_scheduler_storage->delete($rule_scheduler_storage->loadMultiple($ids));
+  /** @var \Drupal\rng\RngCron $rng_cron */
+  $rng_cron = \Drupal::service('rng.cron');
+  $rng_cron->hook_cron();
 }
 
 /**
@@ -151,93 +71,27 @@ function rng_entity_operation(EntityInterface $entity) {
  * Implements hook_entity_insert().
  */
 function rng_entity_insert(EntityInterface $entity) {
-  _rng_entity_postsave($entity);
+  /** @var \Drupal\rng\RngEntityModel $rng_model */
+  $rng_model = \Drupal::service('rng.entity.model');
+  $rng_model->hook_entity_postsave($entity, FALSE);
 }
 
 /**
  * Implements hook_entity_update().
  */
 function rng_entity_update(EntityInterface $entity) {
-  _rng_entity_postsave($entity);
-}
-
-/**
- * Implements hook_entity_update().
- */
-function _rng_entity_postsave(EntityInterface $entity) {
-  if ($entity instanceof RuleInterface) {
-    if (isset($entity->original)) {
-      // Don't continue if rule status didn't change.
-      if ($entity->isActive() == $entity->original->isActive()) {
-        return;
-      }
-    }
-
-    foreach ($entity->getConditions() as $condition) {
-      if ($condition->getPluginId() == 'rng_rule_scheduler') {
-        // Create, update, or delete the associated rule scheduler entity if the
-        // rule status has changed.
-
-        /** @var \Drupal\rng\Plugin\Condition\RuleScheduler $plugin */
-        $plugin = $condition->createInstance();
-        $plugin->updateRuleSchedulerEntity();
-        $plugin_configuration = $plugin->getConfiguration();
-        $condition->setConfiguration($plugin_configuration);
-        $condition->save();
-      }
-    }
-  }
+  /** @var \Drupal\rng\RngEntityModel $rng_model */
+  $rng_model = \Drupal::service('rng.entity.model');
+  $rng_model->hook_entity_postsave($entity, TRUE);
 }
 
 /**
  * Implements hook_entity_predelete().
  */
 function rng_entity_predelete(EntityInterface $entity) {
-  /** @var \Drupal\courier\Service\IdentityChannelManagerInterface $icm */
-  $icm = \Drupal::service('plugin.manager.identity_channel');
-  if (in_array($entity->getEntityType(), $icm->getIdentityTypes())) {
-    // Remove registrant references to this identity.
-    $registrant_ids = Registrant::getRegistrantsIdsForIdentity($entity);
-    foreach (Registrant::loadMultiple($registrant_ids) as $registrant) {
-      $registrant->clearIdentity();
-      $registrant->save();
-    }
-  }
-
-  // Delete related entities when an event is deleted.
-  /** @var \Drupal\rng\EventManagerInterface $event_manager */
-  $event_manager = \Drupal::service('rng.event_manager');
-  try{
-    $event_meta = $event_manager->getMeta($entity);
-
-    // Delete registrations.
-    \Drupal::entityTypeManager()
-      ->getStorage('registration')
-      ->delete($event_meta->getRegistrations());
-
-    // Delete groups.
-    \Drupal::entityTypeManager()
-      ->getStorage('registration_group')
-      ->delete($event_meta->getGroups());
-
-    // Delete rules.
-    \Drupal::entityTypeManager()
-      ->getStorage('rng_rule')
-      ->delete($event_meta->getRules(NULL, FALSE, NULL));
-  }
-  // Not an event, thrown by getMeta().
-  catch (InvalidEventException $e) { }
-
-  if ($entity instanceof RuleComponentInterface) {
-    // Delete a TemplateCollection if the entity is a component with
-    // configuration for 'rng_courier_message'.
-    if ($entity->getPluginId() == 'rng_courier_message') {
-      $action = $entity->createInstance();
-      if (($action instanceof CourierTemplateCollection) && ($template_collection = $action->getTemplateCollection())) {
-        $template_collection->delete();
-      }
-    }
-  }
+  /** @var \Drupal\rng\RngEntityModel $rng_model */
+  $rng_model = \Drupal::service('rng.entity.model');
+  $rng_model->hook_entity_predelete($entity);
 }
 
 /**
