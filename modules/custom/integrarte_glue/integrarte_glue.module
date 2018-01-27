@@ -153,7 +153,7 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
 														'<p>Level: ' . $entity->get('field_level')->value . '</p>' .
 													  '<p>Notes: ' . $entity->get('field_notes')->value . '</p>' .
 													  '<p>View Application: ' . $url . '</p>' ;
-			$params['subject'] = t('Summer Application Submitted: ') . $first . ' ' . $last;
+			$params['subject'] = t('Summer Application Submitted: ') . $firstname . ' ' . $lastname;
 			break;
 		case 'registration':
 		  $params['message'] = 	'<p>Name: ' . $first . ' ' . $last . '</p>' . 
