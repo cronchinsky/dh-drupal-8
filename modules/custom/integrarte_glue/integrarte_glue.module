@@ -117,14 +117,14 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
 	
 	// Load the current user.
 	$user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-	$first = $user->get('field_first_name')->value;
-	$last = $user->get('field_last')->value;
+	$firstname = $user->get('field_first_name')->value;
+	$lastname = $user->get('field_last')->value;
 
 	switch ($entity->bundle()) {
 		case 'application':	
-			$allowed_values = $entity->getFieldDefinition('field_dates_of_attendance')->getFieldStorageDefinition()->getSetting('allowed_values');
+			$allowed_values = $entity->getFieldDefinition('field_dates_of_attendance_2018')->getFieldStorageDefinition()->getSetting('allowed_values');
 			$weeks = array();
-		  $weeks = $entity->get('field_dates_of_attendance')->getValue();
+		  $weeks = $entity->get('field_dates_of_attendance_2018')->getValue();
       $attendance  = '';
       $first = true;
       foreach($weeks as $week){
@@ -142,7 +142,7 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
 			$gender_value = $entity->get('field_gender')->value;
 			$gender = $allowed_values[$gender_value];
 								
-			$params['message'] = 	'<p>Name: ' . $first . ' ' . $last . '</p>' . 
+			$params['message'] = 	'<p>Name: ' . $firstname . ' ' . $lastname . '</p>' . 
 														'<p>Dates of Attendance: ' . $attendance . '</p>' .
 														'<p>Date of Birth: ' . $entity->get('field_date_of_birth')->value . '</p>' .
 														'<p>Height: ' . $entity->get('field_height')->value . '</p>' .
