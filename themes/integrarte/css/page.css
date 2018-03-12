@@ -929,7 +929,9 @@ article.node--type-calendar-event .field--name-field-image {
 article.node--type-class-type {
 	margin-top: 0;
 }
-
+.view-content tbody a {
+  color: #890000;
+}
 /* schedule by week */
 .view-schedule-by-week a,
 .view-content-field-date-on-calendar a {
