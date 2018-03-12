@@ -134,9 +134,17 @@ ul.circle {
 ul.disc {
   list-style: disc outside;
 }
+#block-useraccountmenu ul.menu {
+  text-align: right;
+}
+
+#block-useraccountmenu li {
+  display: inline-block;
+  margin-left: 10px;
+}
 
 #main-navigation {
-	margin-top: 30px;
+	margin-top: 8px;
 }
 
 .navbar {
