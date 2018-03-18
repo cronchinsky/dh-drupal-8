@@ -7,10 +7,14 @@
         "composer/installers": "^1.0.24",
         "wikimedia/composer-merge-plugin": "^1.4",
         "drupal/address": "~1.0",
-        "drupal/csv_serialization": "^1.2"
-    },
-    "replace": {
-        "drupal/core": "^8.4"
+        "drupal/csv_serialization": "^1.2",
+        "drupal/admin_toolbar": "^1.23",
+        "drupal/entity": "^1.0",
+        "drupal/dynamic_entity_reference":"^1.5",
+        "drupal/pathauto": "^1.1",
+        "drupal/bootstrap":"^3.11",
+        "drupal/core": "~8.5",
+        "drush/drush": "~9.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -38,7 +42,7 @@
             "core": ["type:drupal-core"],
             "modules/contrib/{$name}": ["type:drupal-module"],
             "profiles/contrib/{$name}": ["type:drupal-profile"],
-            "themes/contrib/{$name}": ["type:drupal-theme"],
+            "themes/{$name}": ["type:drupal-theme"],
             "drush/contrib/{$name}": ["type:drupal-drush"],
             "modules/custom/{$name}": ["type:drupal-custom-module"],
             "themes/custom/{$name}": ["type:drupal-custom-theme"]
