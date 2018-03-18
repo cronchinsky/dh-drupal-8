@@ -1,17 +1,13 @@
 <?php
-/**
- * @file
- * Contains \Drupal\bootstrap\Plugin\Preprocess\BootstrapDropdown.
- */
 
 namespace Drupal\bootstrap\Plugin\Preprocess;
 
-use Drupal\bootstrap\Annotation\BootstrapPreprocess;
 use Drupal\bootstrap\Utility\Element;
 use Drupal\bootstrap\Utility\Unicode;
 use Drupal\bootstrap\Utility\Variables;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Url;
 
 /**
@@ -73,10 +69,24 @@ class BootstrapDropdown extends PreprocessBase implements PreprocessInterface {
             $element['url'] = Url::fromRoute('<none>');
           }
 
+          $attributes = isset($element['attributes']) ? $element['attributes'] : [];
+          $wrapper_attributes = isset($element['wrapper_attributes']) ? $element['wrapper_attributes'] : [];
+
+          if (isset($element['language']) && $element['language'] instanceof LanguageInterface) {
+            $attributes['hreflang'] = $element['language']->getId();
+            $wrapper_attributes['hreflang'] = $element['language']->getId();
+
+            // Ensure the Url language is set on the object itself.
+            // @todo Possibly a core bug?
+            if (empty($element['url']->getOption('language'))) {
+              $element['url']->setOption('language', $element['language']);
+            }
+          }
+
           // Preserve query parameters (if any)
           if (!empty($element['query'])) {
             $url_query = $element['url']->getOption('query') ?: [];
-            $element['url']->setOption('query', NestedArray::mergeDeep($url_query , $element['query']));
+            $element['url']->setOption('query', NestedArray::mergeDeep($url_query, $element['query']));
           }
 
           // Build render array.
@@ -85,7 +95,8 @@ class BootstrapDropdown extends PreprocessBase implements PreprocessInterface {
             '#title' => $element['title'],
             '#url' => $element['url'],
             '#ajax' => isset($element['ajax']) ? $element['ajax'] : [],
-            '#attributes' => isset($element['attributes']) ? $element['attributes'] : [],
+            '#attributes' => $attributes,
+            '#wrapper_attributes' => $wrapper_attributes,
           ];
         }
       }
@@ -115,24 +126,24 @@ class BootstrapDropdown extends PreprocessBase implements PreprocessInterface {
           $primary_action = $child->addClass('hidden');
         }
 
-        // If actually a "link", add it to the items array directly.
-        if ($child->isType('link')) {
-          $items->$key->link = $child->getArrayCopy();
-        }
-        // Otherwise, convert into a proper link.
-        else {
-          // Hide the original element
-          $items->$key->element = $child->addClass('hidden')->getArrayCopy();
-
-          // Retrieve any set HTML identifier for the link, generating a new
-          // one if necessary.
+        // Convert into a proper link.
+        if (!$child->isType('link')) {
+          // Retrieve any set HTML identifier for the original element,
+          // generating a new one if necessary. This is needed to ensure events
+          // are bound on the original element (which may be DOM specific).
+          // When the corresponding link below is clicked, it proxies all
+          // events to the "dropdown-target" (the original element).
           $id = $child->getAttribute('id');
           if (!$id) {
             $id = $child->getProperty('id', Html::getUniqueId('dropdown-item'));
             $child->setAttribute('id', $id);
           }
 
-          $items->$key->link = Element::createStandalone([
+          // Add the original element to the item list, but hide it.
+          $items->{$key . '_original'} = $child->addClass('hidden')->getArrayCopy();
+
+          // Replace the child element with a proper link.
+          $child = Element::createStandalone([
             '#type' => 'link',
             '#title' => $child->getProperty('value', $child->getProperty('title', $child->getProperty('text'))),
             '#url' => Url::fromUserInput('#'),
@@ -141,9 +152,11 @@ class BootstrapDropdown extends PreprocessBase implements PreprocessInterface {
 
           // Also hide the real link if it's the primary action.
           if ($i === 0) {
-            $items->$key->link->addClass('hidden');
+            $child->addClass('hidden');
           }
         }
+
+        $items->$key = $child->getArrayCopy();
       }
 
       // Create a toggle button, extracting relevant info from primary action.
