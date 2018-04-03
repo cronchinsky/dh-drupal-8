@@ -14,7 +14,8 @@
         "drupal/pathauto": "^1.1",
         "drupal/bootstrap":"^3.11",
         "drupal/core": "~8.5",
-        "drush/drush": "~9.0"
+        "drush/drush": "~9.0",
+        "drupal/honeypot": "^1.27"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
