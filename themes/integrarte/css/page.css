@@ -1015,6 +1015,10 @@ article.node--type-class-type {
 	border-color: #666;
 }
 
+.calendar-calendar tr:hover {
+  background-color: rgba(238, 238, 238, 0.36);
+}
+
 /* hacks to hide the time for all day notices */
 #content_field_date_on_calendar-2016-11-24-0 .datetime,
 #content_field_date_on_calendar-2016-11-26-0 .datetime,
