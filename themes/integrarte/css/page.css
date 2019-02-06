@@ -889,7 +889,8 @@ article.node--type-calendar-event {
 	font-size: 16px;
 }
 
-article.node--type-calendar-event .node--view-mode-description h2 {
+article.node--type-calendar-event .node--view-mode-description h2,
+article.node--type-price.node--view-mode-default h2  {
 	display: none;
 }
 
