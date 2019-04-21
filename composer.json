@@ -8,7 +8,7 @@
         "wikimedia/composer-merge-plugin": "^1.4",
         "drupal/address": "~1.0",
         "drupal/csv_serialization": "^1.2",
-        "drupal/admin_toolbar": "^1.23",
+        "drupal/admin_toolbar": "^1.26",
         "drupal/entity": "^1.0",
         "drupal/dynamic_entity_reference":"^1.5",
         "drupal/pathauto": "^1.1",
