@@ -2,9 +2,9 @@
 
 namespace Drupal\Tests\dynamic_entity_reference\Kernel;
 
-use Drupal\config\Tests\SchemaCheckTestTrait;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
+use Drupal\Tests\SchemaCheckTestTrait;
 
 /**
  * Tests for the dynamic entity reference base field for revisionable entities.
@@ -58,7 +58,6 @@ class DynamicEntityReferenceBaseFieldRevisionTest extends EntityKernelTestBase {
     \Drupal::state()->set('dynamic_entity_reference_entity_test_cardinality', 1);
     \Drupal::state()->set('dynamic_entity_reference_entity_test_exclude', [$this->entityType]);
     $this->enableModules(['dynamic_entity_reference_entity_test']);
-    \Drupal::entityDefinitionUpdateManager()->applyUpdates();
     $this->installEntitySchema($this->entityType);
     $this->installEntitySchema($this->referencedEntityType);
     $entity_type_manager = \Drupal::entityTypeManager();
@@ -124,7 +123,6 @@ class DynamicEntityReferenceBaseFieldRevisionTest extends EntityKernelTestBase {
     \Drupal::state()->set('dynamic_entity_reference_entity_test_cardinality', FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED);
     \Drupal::state()->set('dynamic_entity_reference_entity_test_exclude', [$this->entityType]);
     $this->enableModules(['dynamic_entity_reference_entity_test']);
-    \Drupal::entityDefinitionUpdateManager()->applyUpdates();
     $this->installEntitySchema($this->entityType);
     $this->installEntitySchema($this->referencedEntityType);
     $entity_type_manager = \Drupal::entityTypeManager();
@@ -213,7 +211,6 @@ class DynamicEntityReferenceBaseFieldRevisionTest extends EntityKernelTestBase {
     \Drupal::state()->set('dynamic_entity_reference_entity_test_entities', [$this->entityType, $this->referencedEntityType]);
     \Drupal::state()->set('dynamic_entity_reference_entity_test_with_two_base_fields', TRUE);
     $this->enableModules(['dynamic_entity_reference_entity_test']);
-    \Drupal::entityDefinitionUpdateManager()->applyUpdates();
     $this->installEntitySchema($this->entityType);
     $this->installEntitySchema($this->referencedEntityType);
 
@@ -221,7 +218,7 @@ class DynamicEntityReferenceBaseFieldRevisionTest extends EntityKernelTestBase {
     $referenced_entity = $this->container
       ->get('entity_type.manager')
       ->getStorage($this->entityType)
-      ->create();;
+      ->create();
     $referenced_entity->save();
     $referenced_entity_mul = $this->container
       ->get('entity_type.manager')
@@ -293,7 +290,6 @@ class DynamicEntityReferenceBaseFieldRevisionTest extends EntityKernelTestBase {
     \Drupal::state()->set('dynamic_entity_reference_entity_test_exclude', [$this->entityType]);
     \Drupal::state()->set('dynamic_entity_reference_entity_test_revisionable', TRUE);
     $this->enableModules(['dynamic_entity_reference_entity_test']);
-    \Drupal::entityDefinitionUpdateManager()->applyUpdates();
     $this->installEntitySchema($this->entityType);
     $this->installEntitySchema($this->referencedEntityType);
     $entity_type_manager = \Drupal::entityTypeManager();
@@ -360,7 +356,6 @@ class DynamicEntityReferenceBaseFieldRevisionTest extends EntityKernelTestBase {
     \Drupal::state()->set('dynamic_entity_reference_entity_test_exclude', [$this->entityType]);
     \Drupal::state()->set('dynamic_entity_reference_entity_test_revisionable', TRUE);
     $this->enableModules(['dynamic_entity_reference_entity_test']);
-    \Drupal::entityDefinitionUpdateManager()->applyUpdates();
     $this->installEntitySchema($this->entityType);
     $this->installEntitySchema($this->referencedEntityType);
     $entity_type_manager = \Drupal::entityTypeManager();
@@ -450,7 +445,6 @@ class DynamicEntityReferenceBaseFieldRevisionTest extends EntityKernelTestBase {
     \Drupal::state()->set('dynamic_entity_reference_entity_test_with_two_base_fields', TRUE);
     \Drupal::state()->set('dynamic_entity_reference_entity_test_revisionable', TRUE);
     $this->enableModules(['dynamic_entity_reference_entity_test']);
-    \Drupal::entityDefinitionUpdateManager()->applyUpdates();
     $this->installEntitySchema($this->entityType);
     $this->installEntitySchema($this->referencedEntityType);
 
@@ -458,7 +452,7 @@ class DynamicEntityReferenceBaseFieldRevisionTest extends EntityKernelTestBase {
     $referenced_entity = $this->container
       ->get('entity_type.manager')
       ->getStorage($this->entityType)
-      ->create();;
+      ->create();
     $referenced_entity->save();
     $referenced_entity_mul = $this->container
       ->get('entity_type.manager')

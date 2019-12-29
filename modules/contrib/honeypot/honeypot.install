@@ -48,7 +48,7 @@ function honeypot_schema() {
 function honeypot_install() {
   if (PHP_SAPI !== 'cli') {
     $config_url = Url::fromUri('base://admin/config/content/honeypot');
-    drupal_set_message(t(
+    \Drupal::messenger()->addMessage(t(
       'Honeypot installed successfully. Please <a href=":url">configure Honeypot</a> to protect your forms from spam bots.',
       [':url' => $config_url->toString()]
     ));
@@ -61,6 +61,7 @@ function honeypot_install() {
 function honeypot_uninstall() {
   // Clear the bootstrap cache.
   \Drupal::cache('bootstrap')->deleteAll();
+  \Drupal::configFactory()->getEditable('honeypot.settings.yml')->delete();
 }
 
 /**

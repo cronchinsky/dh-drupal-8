@@ -4,7 +4,6 @@ namespace Drupal\Tests\dynamic_entity_reference\FunctionalJavascript;
 
 use Behat\Mink\Element\NodeElement;
 use Drupal\Component\Utility\Crypt;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\Url;
@@ -12,14 +11,14 @@ use Drupal\entity_test\Entity\EntityTest;
 use Drupal\entity_test\Entity\EntityTestBundle;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\FunctionalJavascriptTests\JavascriptTestBase;
+use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 
 /**
  * Ensures that Dynamic Entity References field works correctly.
  *
  * @group dynamic_entity_reference
  */
-class DynamicEntityReferenceTest extends JavascriptTestBase {
+class DynamicEntityReferenceTest extends WebDriverTestBase {
 
   /**
    * Escape key code.
@@ -52,7 +51,7 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
    *
    * @var array
    */
-  public static $modules = [
+  protected static $modules = [
     'field_ui',
     'dynamic_entity_reference',
     'entity_test',
@@ -75,6 +74,11 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
   ];
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Sets the test up.
    */
   protected function setUp() {
@@ -95,7 +99,7 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
       'description' => 'My test description',
     ])->save();
     // We will query on the first two characters of the second username.
-    $autocomplete_query = Unicode::substr($this->anotherUser->label(), 0, 3);
+    $autocomplete_query = mb_substr($this->anotherUser->label(), 0, 3);
     $this->testEntity = EntityTest::create([
       // Make this partially match the second user name.
       'name' => $autocomplete_query . $this->randomMachineName(5),
@@ -106,12 +110,13 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
     $this->drupalLogin($this->adminUser);
     // Add a new dynamic entity reference field.
     $this->drupalGet('entity_test/structure/entity_test/fields/add-field');
-    $edit = [
-      'label' => 'Foobar',
-      'field_name' => 'foobar',
-      'new_storage_type' => 'dynamic_entity_reference',
-    ];
-    $this->submitForm($edit, t('Save and continue'), 'field-ui-field-storage-add-form');
+    $select = $assert_session->selectExists('new_storage_type');
+    $select->selectOption('dynamic_entity_reference');
+    $label = $assert_session->fieldExists('label');
+    $label->setValue('Foobar');
+    // Wait for the machine name.
+    $assert_session->waitForElementVisible('css', '[name="label"] + * .machine-name-value');
+    $this->submitForm([], t('Save and continue'), 'field-ui-field-storage-add-form');
     $page = $this->getSession()->getPage();
     $entity_type_ids_select = $assert_session->selectExists('settings[entity_type_ids][]', $page);
     $entity_type_ids_select->selectOption('user');
@@ -182,12 +187,13 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
     $this->drupalLogin($this->adminUser);
     $this->drupalCreateContentType(['type' => 'test_content']);
     $this->drupalGet('/admin/structure/types/manage/test_content/fields/add-field');
-    $edit = [
-      'label' => 'Foobar',
-      'field_name' => 'foobar',
-      'new_storage_type' => 'dynamic_entity_reference',
-    ];
-    $this->submitForm($edit, t('Save and continue'), 'field-ui-field-storage-add-form');
+    $select = $assert_session->selectExists('new_storage_type');
+    $select->selectOption('dynamic_entity_reference');
+    $label = $assert_session->fieldExists('label');
+    $label->setValue('Foobar');
+    // Wait for the machine name.
+    $assert_session->waitForElementVisible('css', '[name="label"] + * .machine-name-value');
+    $this->submitForm([], t('Save and continue'), 'field-ui-field-storage-add-form');
     $page = $this->getSession()->getPage();
     $entity_type_ids_select = $assert_session->selectExists('settings[entity_type_ids][]', $page);
     $entity_type_ids_select->selectOption('user');
@@ -273,15 +279,9 @@ class DynamicEntityReferenceTest extends JavascriptTestBase {
    *   Field to search in.
    */
   protected function performAutocompleteQuery($autocomplete_query, NodeElement $autocomplete_field) {
-    foreach (str_split($autocomplete_query) as $char) {
-      // Autocomplete uses keydown/up directly.
-      $autocomplete_field->keyDown($char);
-      $autocomplete_field->keyUp($char);
-    }
-    // Wait for ajax.
-    $this->assertSession()->assertWaitOnAjaxRequest(20000);
-    // And autocomplete selection.
-    $this->assertJsCondition('jQuery(".ui-autocomplete.ui-menu li.ui-menu-item:visible").length > 0', 5000);
+    $autocomplete_field->setValue($autocomplete_query);
+    $autocomplete_field->keyDown(' ');
+    $this->assertSession()->waitOnAutocomplete();
   }
 
   /**
