@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\php\Plugin\Filter\Php.
- */
-
 namespace Drupal\php\Plugin\Filter;
 
 use Drupal\filter\FilterProcessResult;
@@ -28,7 +23,9 @@ class Php extends FilterBase {
    * {@inheritdoc}
    */
   public function process($text, $langcode) {
-    return new FilterProcessResult(php_eval($text));
+    $result = new FilterProcessResult(php_eval($text));
+    $result->setCacheMaxAge(0);
+    return $result;
   }
 
   /**

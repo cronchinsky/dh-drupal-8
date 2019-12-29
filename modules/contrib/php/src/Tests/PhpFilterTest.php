@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\php\Tests\PhpFilterTest.
- */
-
 namespace Drupal\php\Tests;
 
 /**
@@ -20,7 +15,13 @@ class PhpFilterTest extends PhpTestBase {
   public function testPhpFilter() {
     // Log in as a user with permission to use the PHP code text format.
     $php_code_permission = entity_load('filter_format', 'php_code')->getPermissionName();
-    $web_user = $this->drupalCreateUser(['access content', 'create page content', 'edit own page content', $php_code_permission]);
+    $permissions = [
+      'access content',
+      'create page content',
+      'edit own page content',
+      $php_code_permission,
+    ];
+    $web_user = $this->drupalCreateUser($permissions);
     $this->drupalLogin($web_user);
 
     // Create a node with PHP code in it.
@@ -34,11 +35,17 @@ class PhpFilterTest extends PhpTestBase {
     $edit = [];
     $edit['body[0][format]'] = $this->phpCodeFormat->id();
     $this->drupalPostForm('node/' . $node->id() . '/edit', $edit, t('Save'));
-    $this->assertRaw(t('Basic page %title has been updated.', ['%title' => $node->label()]), 'PHP code filter turned on.');
+    $this->assertRaw(t('@type %title has been updated.', ['@type' => 'Basic page', '%title' => $node->link($node->getTitle())]), 'PHP code filter turned on.');
 
     // Make sure that the PHP code shows up as text.
     $this->assertNoText('print "SimpleTest PHP was executed!"', "PHP code isn't displayed.");
     $this->assertText('SimpleTest PHP was executed!', 'PHP code has been evaluated.');
+
+    // Verify that cache is disabled for PHP evaluates.
+    $this->assertText('Current state is empty', 'PHP code has been evaluated once.');
+    \Drupal::state()->set('php_state_test', 'not empty');
+    $this->drupalGet('node/' . $node->id());
+    $this->assertText('Current state is not empty', 'PHP code has been evaluated again.');
   }
 
 }

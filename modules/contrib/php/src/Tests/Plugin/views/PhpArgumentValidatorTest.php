@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\php\Tests\Plugin\views\ArgumentValidatorTest.
- */
-
 namespace Drupal\php\Tests\Plugin\views;
 
 use Drupal\views\Tests\ViewKernelTestBase;
@@ -32,7 +27,7 @@ class PhpArgumentValidatorTest extends ViewKernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['php', 'php_views_test_config'];
+  public static $modules = ['filter', 'php', 'php_views_test_config'];
 
   /**
    * {@inheritdoc}
@@ -40,7 +35,7 @@ class PhpArgumentValidatorTest extends ViewKernelTestBase {
   protected function setUp($import_test_views = TRUE) {
     parent::setUp();
     if ($import_test_views) {
-      ViewTestData::createTestViews(get_class($this), array('php_views_test_config'));
+      ViewTestData::createTestViews(get_class($this), ['php_views_test_config']);
     }
   }
 

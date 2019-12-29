@@ -1,15 +1,9 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\php\Plugin\views\argument_default\Php.
- */
-
 namespace Drupal\php\Plugin\views\argument_default;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\argument_default\ArgumentDefaultPluginBase;
-
 
 /**
  * Default argument plugin to provide a PHP code block.
@@ -49,6 +43,8 @@ class Php extends ArgumentDefaultPluginBase {
   }
 
   /**
+   * Permissions check.
+   *
    * Only let users with PHP block visibility permissions set/modify this
    * default plugin.
    */

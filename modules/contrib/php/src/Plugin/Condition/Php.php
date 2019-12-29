@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\php\Plugin\Condition\Php.
- */
-
 namespace Drupal\php\Plugin\Condition;
 
 use Drupal\Core\Condition\ConditionPluginBase;
@@ -39,7 +34,7 @@ class Php extends ConditionPluginBase {
       '#title' => $this->t('When the following PHP return TRUE (experts only)'),
       '#default_value' => $this->configuration['php'],
       '#description' => $this->t('Enter PHP code between &lt;?php ?&gt;. Note that executing incorrect PHP code can break your Drupal site. Return TRUE in order for this condition to evaluate as TRUE.'),
-      '#access' => \Drupal::currentUser()->hasPermission('use PHP for settings')
+      '#access' => \Drupal::currentUser()->hasPermission('use PHP for settings'),
     ];
 
     return parent::buildConfigurationForm($form, $form_state);

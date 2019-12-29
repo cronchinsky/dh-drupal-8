@@ -1,13 +1,8 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\php\Tests\Condition\PhpConditionTest.
- */
-
 namespace Drupal\php\Tests\Condition;
 
-use \Drupal\KernelTests\KernelTestBase;
+use Drupal\KernelTests\KernelTestBase;
 
 /**
  * Tests that the PHP Condition, provided by php module, is working properly.
@@ -28,7 +23,7 @@ class PhpConditionTest extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = ['system', 'php'];
+  public static $modules = ['filter', 'system', 'php'];
 
   /**
    * {@inheritdoc}

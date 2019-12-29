@@ -19,6 +19,6 @@
   },
   "license": "GPL-2.0+",
   "require": {
-    "drupal/filter": "dev"
+    "drupal/core": "~8.0"
   }
 }

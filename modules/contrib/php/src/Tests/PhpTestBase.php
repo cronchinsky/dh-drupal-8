@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\php\Tests\PhpTestBase.
- */
-
 namespace Drupal\php\Tests;
 
 use Drupal\simpletest\WebTestBase;
@@ -66,7 +61,7 @@ abstract class PhpTestBase extends WebTestBase {
    *   Node object.
    */
   public function createNodeWithCode() {
-    return $this->drupalCreateNode(['body' => [['value' => '<?php print "SimpleTest PHP was executed!"; ?>']]]);
+    return $this->drupalCreateNode(['body' => [['value' => '<?php print "SimpleTest PHP was executed!";print "Current state is " . Drupal::state()->get("php_state_test", "empty"); ?>']]]);
   }
 
 }

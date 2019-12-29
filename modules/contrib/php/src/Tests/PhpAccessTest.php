@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\php\Tests\PhpAccessTest.
- */
-
 namespace Drupal\php\Tests;
 
 /**
@@ -19,7 +14,12 @@ class PhpAccessTest extends PhpTestBase {
    */
   public function testNoPrivileges() {
     // Create node with PHP filter enabled.
-    $web_user = $this->drupalCreateUser(['access content', 'create page content', 'edit own page content']);
+    $permissions = [
+      'access content',
+      'create page content',
+      'edit own page content',
+    ];
+    $web_user = $this->drupalCreateUser($permissions);
     $this->drupalLogin($web_user);
     $node = $this->createNodeWithCode();
 

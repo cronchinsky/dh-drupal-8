@@ -1,15 +1,9 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\views\Plugin\views\argument_validator\Php.
- */
-
 namespace Drupal\php\Plugin\views\argument_validator;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\argument_validator\ArgumentValidatorPluginBase;
-
 
 /**
  * Provide PHP code to validate whether or not an argument is ok.
@@ -48,6 +42,8 @@ class Php extends ArgumentValidatorPluginBase {
   }
 
   /**
+   * Permission check.
+   *
    * Only let users with PHP block visibility permissions set/modify this
    * validate plugin.
    */
