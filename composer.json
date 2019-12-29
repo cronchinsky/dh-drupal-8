@@ -18,7 +18,8 @@
         "drupal/honeypot": "^1.27",
         "twig/twig": "1.38.2",
         "drupal/devel": "^2.0",
-        "drupal/video": "^1.4"
+        "drupal/video": "^1.4",
+        "drupal/field_group": "^3.0"
     },
     "conflict": {
         "symfony/dom-crawler": ">=4"
