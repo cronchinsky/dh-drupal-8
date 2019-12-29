@@ -393,7 +393,7 @@ class Jssor extends StylePluginBase {
           'transition0811' => $this->t('Dodge Outside in Random Chess'),
           'transition0812' => $this->t('Dodge Outside in Square'),
         ],
-        $this->t('Dodge Inside Effects') => [
+        'Dodge Inside Effects' => [
           'transition0901' => $this->t('Dodge Inside out Stairs'),
           'transition0902' => $this->t('Dodge Inside out Swirl'),
           'transition0903' => $this->t('Dodge Inside out ZigZag'),

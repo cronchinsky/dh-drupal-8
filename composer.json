@@ -3,6 +3,18 @@
     "description": "Drupal is an open source content management platform powering millions of websites and applications.",
     "type": "project",
     "license": "GPL-2.0+",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories": {
+        "drupal": {
+            "type": "composer",
+            "url": "https://packages.drupal.org/8"
+        },
+        "assets": {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    },
     "require": {
         "composer/installers": "^1.0.24",
         "wikimedia/composer-merge-plugin": "^1.4",
@@ -22,18 +34,18 @@
         "drupal/field_group": "^3.0",
         "drupal/php": "^1.0",
         "drupal/rng_quick": "^1.1",
-        "drupal/views_advanced_routing": "^1.0"
+        "drupal/views_advanced_routing": "^1.0",
+        "drupal/jssor": "^1.0"
     },
     "conflict": {
         "symfony/dom-crawler": ">=4"
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "config": {
         "preferred-install": "dist",
         "autoloader-suffix": "Drupal8"
     },
     "extra": {
+        "enable-patching": true,
         "_readme": [
             "By default Drupal loads the autoloader from ./vendor/autoload.php.",
             "To change the autoloader you can edit ./autoload.php.",
@@ -49,6 +61,11 @@
             "drush/contrib/{$name}": ["type:drupal-drush"],
             "modules/custom/{$name}": ["type:drupal-custom-module"],
             "themes/custom/{$name}": ["type:drupal-custom-theme"]
+        },
+        "patches": {
+            "drupal/jssor": {
+                "Undefined index slide_spacing in template_preprocess_views_view_jssor": "https://www.drupal.org/files/issues/warning_slide_spacing-2673660-1.patch"
+            }
         }
     },
     "autoload": {
@@ -63,11 +80,5 @@
         ],
         "post-package-install": "Drupal\\Core\\Composer\\Composer::vendorTestCodeCleanup",
         "post-package-update": "Drupal\\Core\\Composer\\Composer::vendorTestCodeCleanup"
-    },
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://packages.drupal.org/8"
-        }
-    ]
+    }
 }

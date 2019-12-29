@@ -1,0 +1,13 @@
+diff --git a/src/Plugin/views/style/Jssor.php b/src/Plugin/views/style/Jssor.php
+index 7bd569e..b9b9378 100755
+--- a/src/Plugin/views/style/Jssor.php
++++ b/src/Plugin/views/style/Jssor.php
+@@ -393,7 +393,7 @@ class Jssor extends StylePluginBase {
+           'transition0811' => $this->t('Dodge Outside in Random Chess'),
+           'transition0812' => $this->t('Dodge Outside in Square'),
+         ],
+-        $this->t('Dodge Inside Effects') => [
++        'Dodge Inside Effects' => [
+           'transition0901' => $this->t('Dodge Inside out Stairs'),
+           'transition0902' => $this->t('Dodge Inside out Swirl'),
+           'transition0903' => $this->t('Dodge Inside out ZigZag'),

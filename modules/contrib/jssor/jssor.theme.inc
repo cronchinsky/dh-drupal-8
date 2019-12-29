@@ -23,6 +23,7 @@ use Drupal\Core\Template\Attribute;
 function template_preprocess_views_view_jssor(&$variables) {
   $view = $variables['view'];
   $rows = $variables['rows'];
+
   // Style plugin.
   $style = $view->style_plugin;
   $options = $style->options;
@@ -70,7 +71,7 @@ function template_preprocess_views_view_jssor(&$variables) {
   // $settings['$MinDragOffsetToSlide'] = 20;
 
   // Space between each slide in pixels.
-  $settings['$SlideSpacing'] = $options['general']['slide_spacing'];;
+  $settings['$SlideSpacing'] = isset($options['general']['slide_spacing']) ? $options['general']['slide_spacing'] : 0;
 
   // Number of slides to display in the 'slides' container (slideshow would be
   // disabled if the value is greater than 1)
@@ -193,7 +194,6 @@ function template_preprocess_views_view_jssor(&$variables) {
  *   - row: The raw results rows.
  */
 function template_preprocess_views_view_jssor_row(&$variables) {
-  dpm($variables['row'], 'jssor row');
   $item = $variables['row'];
   $options = $variables['options'];
 
@@ -263,7 +263,6 @@ function template_preprocess_image_jssor_formatter(&$variables) {
  *     Properties used: #attributes, #children.
  */
 function template_preprocess_images_jssor_formatter(&$variables) {
-  dpm($variables['element'], 'images_jssor');
   $element = $variables['element'];
   // Ensure #attributes is set.
   $element += array('#attributes' => array());
