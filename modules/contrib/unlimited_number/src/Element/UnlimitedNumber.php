@@ -57,6 +57,8 @@ class UnlimitedNumber extends FormElement {
       '#title' => $element['#title'],
       '#description' => $element['#description'],
       '#required' => !empty($element['#required']),
+      // Kills \Drupal\Core\Render\Element\Radios::processRadios.
+      '#process' => [],
     ];
 
     $element['unlimited_number']['unlimited'] = [

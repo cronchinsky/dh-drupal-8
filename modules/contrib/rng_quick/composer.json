@@ -17,6 +17,6 @@
   ],
   "license": "GPL-2.0+",
   "require": {
-    "drupal/rng": "~8.0"
+    "drupal/rng": "^1.0"
   }
 }

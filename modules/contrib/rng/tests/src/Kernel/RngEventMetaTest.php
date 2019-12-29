@@ -49,6 +49,7 @@ class RngEventMetaTest extends RngKernelTestBase {
     $this->eventManager = $this->container->get('rng.event_manager');
     $this->eventType = $this->createEventType('entity_test', 'entity_test');
     $this->unlimited = EventMetaInterface::CAPACITY_UNLIMITED;
+    $this->installEntitySchema('entity_test');
   }
 
   /**
