@@ -13,7 +13,7 @@
         "drupal/dynamic_entity_reference":"^1.5",
         "drupal/pathauto": "^1.1",
         "drupal/bootstrap":"^3.11",
-        "drupal/core": "8.7.11",
+        "drupal/core": "8.8.1",
         "drush/drush": "~9.0",
         "drupal/honeypot": "^1.27",
         "twig/twig": "1.38.2",

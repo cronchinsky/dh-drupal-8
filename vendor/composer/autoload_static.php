@@ -154,10 +154,6 @@ class ComposerStaticInitDrupal8
             'Composer\\Installers\\' => 20,
             'CommerceGuys\\Addressing\\' => 24,
         ),
-        'B' => 
-        array (
-            'Brumann\\Polyfill\\' => 17,
-        ),
         'A' => 
         array (
             'Asm89\\Stack\\' => 12,
@@ -479,10 +475,6 @@ class ComposerStaticInitDrupal8
         'CommerceGuys\\Addressing\\' => 
         array (
             0 => __DIR__ . '/..' . '/commerceguys/addressing/src',
-        ),
-        'Brumann\\Polyfill\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/brumann/polyfill-unserialize/src',
         ),
         'Asm89\\Stack\\' => 
         array (
