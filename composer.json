@@ -61,11 +61,6 @@
             "drush/contrib/{$name}": ["type:drupal-drush"],
             "modules/custom/{$name}": ["type:drupal-custom-module"],
             "themes/custom/{$name}": ["type:drupal-custom-theme"]
-        },
-        "patches": {
-            "drupal/jssor": {
-                "Undefined index slide_spacing in template_preprocess_views_view_jssor": "https://www.drupal.org/files/issues/warning_slide_spacing-2673660-1.patch"
-            }
         }
     },
     "autoload": {
