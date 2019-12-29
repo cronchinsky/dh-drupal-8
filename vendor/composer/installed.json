@@ -3420,6 +3420,55 @@
         }
     },
     {
+        "name": "drupal/views_advanced_routing",
+        "version": "1.0.0",
+        "version_normalized": "1.0.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://git.drupalcode.org/project/views_advanced_routing.git",
+            "reference": "8.x-1.0"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://ftp.drupal.org/files/projects/views_advanced_routing-8.x-1.0.zip",
+            "reference": "8.x-1.0",
+            "shasum": "11e90e442dbf3c03804f604cdf48e62c7f0e1fc9"
+        },
+        "require": {
+            "drupal/core": "~8.0"
+        },
+        "type": "drupal-module",
+        "extra": {
+            "branch-alias": {
+                "dev-1.x": "1.x-dev"
+            },
+            "drupal": {
+                "version": "8.x-1.0",
+                "datestamp": "1569923885",
+                "security-coverage": {
+                    "status": "covered",
+                    "message": "Covered by Drupal's security advisory policy"
+                }
+            }
+        },
+        "installation-source": "dist",
+        "notification-url": "https://packages.drupal.org/8/downloads",
+        "license": [
+            "GPL-2.0-or-later"
+        ],
+        "authors": [
+            {
+                "name": "dpi",
+                "homepage": "https://www.drupal.org/user/81431"
+            }
+        ],
+        "description": "Provides advanced route customisation for Views.",
+        "homepage": "https://www.drupal.org/project/views_advanced_routing",
+        "support": {
+            "source": "https://git.drupalcode.org/project/views_advanced_routing"
+        }
+    },
+    {
         "name": "drush/drush",
         "version": "9.7.1",
         "version_normalized": "9.7.1.0",

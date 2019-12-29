@@ -21,7 +21,8 @@
         "drupal/video": "^1.4",
         "drupal/field_group": "^3.0",
         "drupal/php": "^1.0",
-        "drupal/rng_quick": "^1.1"
+        "drupal/rng_quick": "^1.1",
+        "drupal/views_advanced_routing": "^1.0"
     },
     "conflict": {
         "symfony/dom-crawler": ">=4"
