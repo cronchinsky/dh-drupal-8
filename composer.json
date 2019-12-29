@@ -35,7 +35,8 @@
         "drupal/php": "^1.0",
         "drupal/rng_quick": "^1.1",
         "drupal/views_advanced_routing": "^1.0",
-        "drupal/jssor": "^1.0"
+        "drupal/jssor": "^1.0",
+        "drupal/profile": "^1.0"
     },
     "conflict": {
         "symfony/dom-crawler": ">=4"
