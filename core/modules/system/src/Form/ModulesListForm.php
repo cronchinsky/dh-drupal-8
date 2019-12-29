@@ -7,6 +7,7 @@ use Drupal\Core\Config\PreExistingConfigException;
 use Drupal\Core\Config\UnmetDependenciesException;
 use Drupal\Core\Access\AccessManagerInterface;
 use Drupal\Core\Extension\Extension;
+use Drupal\Core\Extension\InfoParserException;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Extension\ModuleInstallerInterface;
 use Drupal\Core\Form\FormBase;
@@ -143,8 +144,14 @@ class ModulesListForm extends FormBase {
     ];
 
     // Sort all modules by their names.
-    $modules = system_rebuild_module_data();
-    uasort($modules, 'system_sort_modules_by_info_name');
+    try {
+      $modules = system_rebuild_module_data();
+      uasort($modules, 'system_sort_modules_by_info_name');
+    }
+    catch (InfoParserException $e) {
+      $this->messenger()->addError($this->t('Modules could not be listed due to an error: %error', ['%error' => $e->getMessage()]));
+      $modules = [];
+    }
 
     // Iterate over each of the modules.
     $form['modules']['#tree'] = TRUE;
@@ -274,10 +281,14 @@ class ModulesListForm extends FormBase {
     $reasons = [];
 
     // Check the core compatibility.
-    if ($module->info['core'] != \Drupal::CORE_COMPATIBILITY) {
+    if ($module->info['core_incompatible']) {
       $compatible = FALSE;
       $reasons[] = $this->t('This version is not compatible with Drupal @core_version and should be replaced.', [
-        '@core_version' => \Drupal::CORE_COMPATIBILITY,
+        '@core_version' => \Drupal::VERSION,
+      ]);
+      $row['#requires']['core'] = $this->t('Drupal Core (@core_requirement) (<span class="admin-missing">incompatible with</span> version @core_version)', [
+        '@core_requirement' => isset($module->info['core_version_requirement']) ? $module->info['core_version_requirement'] : $module->info['core'],
+        '@core_version' => \Drupal::VERSION,
       ]);
     }
 
@@ -300,7 +311,8 @@ class ModulesListForm extends FormBase {
     }
 
     // If this module requires other modules, add them to the array.
-    foreach ($module->requires as $dependency => $version) {
+    /** @var \Drupal\Core\Extension\Dependency $dependency_object */
+    foreach ($module->requires as $dependency => $dependency_object) {
       if (!isset($modules[$dependency])) {
         $row['#requires'][$dependency] = $this->t('@module (<span class="admin-missing">missing</span>)', ['@module' => Unicode::ucfirst($dependency)]);
         $row['enable']['#disabled'] = TRUE;
@@ -310,16 +322,17 @@ class ModulesListForm extends FormBase {
         $name = $modules[$dependency]->info['name'];
         // Disable the module's checkbox if it is incompatible with the
         // dependency's version.
-        if ($incompatible_version = drupal_check_incompatibility($version, str_replace(\Drupal::CORE_COMPATIBILITY . '-', '', $modules[$dependency]->info['version']))) {
-          $row['#requires'][$dependency] = $this->t('@module (<span class="admin-missing">incompatible with</span> version @version)', [
-            '@module' => $name . $incompatible_version,
+        if (!$dependency_object->isCompatible(str_replace(\Drupal::CORE_COMPATIBILITY . '-', '', $modules[$dependency]->info['version']))) {
+          $row['#requires'][$dependency] = $this->t('@module (@constraint) (<span class="admin-missing">incompatible with</span> version @version)', [
+            '@module' => $name,
+            '@constraint' => $dependency_object->getConstraintString(),
             '@version' => $modules[$dependency]->info['version'],
           ]);
           $row['enable']['#disabled'] = TRUE;
         }
         // Disable the checkbox if the dependency is incompatible with this
         // version of Drupal core.
-        elseif ($modules[$dependency]->info['core'] != \Drupal::CORE_COMPATIBILITY) {
+        elseif ($modules[$dependency]->info['core_incompatible']) {
           $row['#requires'][$dependency] = $this->t('@module (<span class="admin-missing">incompatible with</span> this version of Drupal core)', [
             '@module' => $name,
           ]);
@@ -450,30 +463,28 @@ class ModulesListForm extends FormBase {
       try {
         $this->moduleInstaller->install(array_keys($modules['install']));
         $module_names = array_values($modules['install']);
-        drupal_set_message($this->formatPlural(count($module_names), 'Module %name has been enabled.', '@count modules have been enabled: %names.', [
+        $this->messenger()->addStatus($this->formatPlural(count($module_names), 'Module %name has been enabled.', '@count modules have been enabled: %names.', [
           '%name' => $module_names[0],
           '%names' => implode(', ', $module_names),
         ]));
       }
       catch (PreExistingConfigException $e) {
         $config_objects = $e->flattenConfigObjects($e->getConfigObjects());
-        drupal_set_message(
+        $this->messenger()->addError(
           $this->formatPlural(
             count($config_objects),
             'Unable to install @extension, %config_names already exists in active configuration.',
             'Unable to install @extension, %config_names already exist in active configuration.',
             [
               '%config_names' => implode(', ', $config_objects),
-              '@extension' => $modules['install'][$e->getExtension()]
-            ]),
-          'error'
+              '@extension' => $modules['install'][$e->getExtension()],
+            ])
         );
         return;
       }
       catch (UnmetDependenciesException $e) {
-        drupal_set_message(
-          $e->getTranslatedMessage($this->getStringTranslation(), $modules['install'][$e->getExtension()]),
-          'error'
+        $this->messenger()->addError(
+          $e->getTranslatedMessage($this->getStringTranslation(), $modules['install'][$e->getExtension()])
         );
         return;
       }

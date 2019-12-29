@@ -2,9 +2,10 @@
 
 namespace Drupal\KernelTests\Core\Entity;
 
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\TypedData\TranslationStatusInterface;
+use Drupal\entity_test\Entity\EntityTestMul;
 use Drupal\entity_test\Entity\EntityTestMulRev;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
@@ -631,21 +632,21 @@ class EntityTranslationTest extends EntityLanguageTestBase {
 
     // Check that retrieving the current translation works as expected.
     $entity = $this->reloadEntity($entity);
-    $translation = $this->entityManager->getTranslationFromContext($entity, $langcode2);
+    $translation = \Drupal::service('entity.repository')->getTranslationFromContext($entity, $langcode2);
     $this->assertEqual($translation->language()->getId(), $default_langcode, 'The current translation language matches the expected one.');
 
     // Check that language fallback respects language weight by default.
     $language = ConfigurableLanguage::load($languages[$langcode]->getId());
     $language->set('weight', -1);
     $language->save();
-    $translation = $this->entityManager->getTranslationFromContext($entity, $langcode2);
+    $translation = \Drupal::service('entity.repository')->getTranslationFromContext($entity, $langcode2);
     $this->assertEqual($translation->language()->getId(), $langcode, 'The current translation language matches the expected one.');
 
     // Check that the current translation is properly returned.
-    $translation = $this->entityManager->getTranslationFromContext($entity);
+    $translation = \Drupal::service('entity.repository')->getTranslationFromContext($entity);
     $this->assertEqual($langcode, $translation->language()->getId(), 'The current translation language matches the topmost language fallback candidate.');
     $entity->addTranslation($current_langcode, $values[$current_langcode]);
-    $translation = $this->entityManager->getTranslationFromContext($entity);
+    $translation = \Drupal::service('entity.repository')->getTranslationFromContext($entity);
     $this->assertEqual($current_langcode, $translation->language()->getId(), 'The current translation language matches the current language.');
 
     // Check that if the entity has no translation no fallback is applied.
@@ -654,7 +655,7 @@ class EntityTranslationTest extends EntityLanguageTestBase {
     $controller = $this->entityManager->getViewBuilder($entity_type);
     $entity2_build = $controller->view($entity2);
     $entity2_output = (string) $renderer->renderRoot($entity2_build);
-    $translation = $this->entityManager->getTranslationFromContext($entity2, $default_langcode);
+    $translation = \Drupal::service('entity.repository')->getTranslationFromContext($entity2, $default_langcode);
     $translation_build = $controller->view($translation);
     $translation_output = (string) $renderer->renderRoot($translation_build);
     $this->assertSame($entity2_output, $translation_output, 'When the entity has no translation no fallback is applied.');
@@ -806,7 +807,7 @@ class EntityTranslationTest extends EntityLanguageTestBase {
     foreach ($langcodes as $langcode) {
       $adapter = $entity->getTranslation($langcode)->getTypedData();
       $name = $adapter->get('name')->value;
-      $this->assertEqual($name, $values[$langcode]['name'], SafeMarkup::format('Name correctly retrieved from "@langcode" adapter', ['@langcode' => $langcode]));
+      $this->assertEqual($name, $values[$langcode]['name'], new FormattableMarkup('Name correctly retrieved from "@langcode" adapter', ['@langcode' => $langcode]));
     }
   }
 
@@ -1011,6 +1012,33 @@ class EntityTranslationTest extends EntityLanguageTestBase {
     foreach (array_keys($entity->getTranslationLanguages()) as $langcode) {
       $this->assertEquals(TranslationStatusInterface::TRANSLATION_EXISTING, $entity->getTranslationStatus($langcode));
     }
+  }
+
+  /**
+   * Tests the translation object cache.
+   */
+  public function testTranslationObjectCache() {
+    $default_langcode = $this->langcodes[1];
+    $translation_langcode = $this->langcodes[2];
+
+    $entity = EntityTestMul::create([
+      'name' => 'test',
+      'langcode' => $default_langcode,
+    ]);
+    $entity->save();
+    $entity->addTranslation($translation_langcode)->save();
+
+    // Test that the default translation object is put into the translation
+    // object cache when a new translation object is initialized.
+    $entity = \Drupal::entityTypeManager()->getStorage($entity->getEntityTypeId())->loadUnchanged($entity->id());
+    $default_translation_spl_object_hash = spl_object_hash($entity);
+    $this->assertEquals($default_translation_spl_object_hash, spl_object_hash($entity->getTranslation($translation_langcode)->getTranslation($default_langcode)));
+
+    // Test that non-default translations are always served from the translation
+    // object cache.
+    $entity = \Drupal::entityTypeManager()->getStorage($entity->getEntityTypeId())->loadUnchanged($entity->id());
+    $this->assertEquals(spl_object_hash($entity->getTranslation($translation_langcode)), spl_object_hash($entity->getTranslation($translation_langcode)));
+    $this->assertEquals(spl_object_hash($entity->getTranslation($translation_langcode)), spl_object_hash($entity->getTranslation($translation_langcode)->getTranslation($default_langcode)->getTranslation($translation_langcode)));
   }
 
 }

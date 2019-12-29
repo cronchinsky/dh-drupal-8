@@ -10,6 +10,7 @@ use Drupal\Component\Utility\Unicode;
  * @group Module
  */
 class DependencyTest extends ModuleTestBase {
+
   /**
    * Checks functionality of project namespaces for dependencies.
    */
@@ -99,6 +100,29 @@ class DependencyTest extends ModuleTestBase {
     $this->assertRaw('This module requires PHP version 6502.* and is incompatible with PHP version ' . phpversion() . '.', 'User is informed when the PHP dependency requirement of a module is not met.');
     $checkbox = $this->xpath('//input[@type="checkbox" and @disabled="disabled" and @name="modules[system_incompatible_php_version_test][enable]"]');
     $this->assert(count($checkbox) == 1, 'Checkbox for the module is disabled.');
+  }
+
+  /**
+   * Tests enabling modules with different core version specifications.
+   */
+  public function testCoreCompatibility() {
+    $assert_session = $this->assertSession();
+
+    // Test incompatible 'core_version_requirement'.
+    $this->drupalGet('admin/modules');
+    $assert_session->fieldDisabled('modules[system_incompatible_core_version_test_1x][enable]');
+    $assert_session->fieldDisabled('modules[system_core_incompatible_semver_test][enable]');
+
+    // Test compatible 'core_version_requirement' and compatible 'core'.
+    $this->drupalGet('admin/modules');
+    $assert_session->fieldEnabled('modules[common_test][enable]');
+    $assert_session->fieldEnabled('modules[system_core_semver_test][enable]');
+
+    // Ensure the modules can actually be installed.
+    $edit['modules[common_test][enable]'] = 'common_test';
+    $edit['modules[system_core_semver_test][enable]'] = 'system_core_semver_test';
+    $this->drupalPostForm('admin/modules', $edit, t('Install'));
+    $this->assertModules(['common_test', 'system_core_semver_test'], TRUE);
   }
 
   /**

@@ -2,12 +2,19 @@
 
 namespace Drupal\Tests\search\Functional;
 
+use Drupal\Tests\BrowserTestBase;
+
 /**
  * Tests search functionality with punctuation and HTML entities.
  *
  * @group search
  */
-class SearchNodePunctuationTest extends SearchTestBase {
+class SearchNodePunctuationTest extends BrowserTestBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  protected static $modules = ['node', 'search'];
 
   /**
    * A user with permission to use advanced search.
@@ -18,8 +25,10 @@ class SearchNodePunctuationTest extends SearchTestBase {
 
   protected function setUp() {
     parent::setUp();
-    node_access_rebuild();
 
+    $this->drupalCreateContentType(['type' => 'page', 'name' => 'Basic page']);
+
+    node_access_rebuild();
     // Create a test user and log in.
     $this->testUser = $this->drupalCreateUser(['access content', 'search content', 'use advanced search', 'access user profiles']);
     $this->drupalLogin($this->testUser);
@@ -45,7 +54,7 @@ class SearchNodePunctuationTest extends SearchTestBase {
     $this->assertText($node->label());
 
     // Check if the author is linked correctly to the user profile page.
-    $username = $node->getOwner()->getUsername();
+    $username = $node->getOwner()->getAccountName();
     $this->assertLink($username);
 
     // Search for "&" and verify entities are not broken up in the output.

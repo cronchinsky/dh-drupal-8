@@ -29,7 +29,7 @@ class ImageStyleFlushTest extends ImageFieldTestBase {
     }
 
     // Make sure we have an image in our wrapper testing file directory.
-    $source_uri = file_unmanaged_copy($file->uri, $wrapper . '://');
+    $source_uri = \Drupal::service('file_system')->copy($file->uri, $wrapper . '://');
     // Build the derivative image.
     $derivative_uri = $style->buildUri($source_uri);
     $derivative = $style->createDerivative($source_uri, $derivative_uri);
@@ -103,7 +103,7 @@ class ImageStyleFlushTest extends ImageFieldTestBase {
     }
     $this->drupalPostForm($style_path . '/effects/' . $uuids['image_scale'] . '/delete', [], t('Delete'));
     $this->assertResponse(200);
-    $this->drupalPostForm($style_path, [], t('Update style'));
+    $this->drupalPostForm($style_path, [], t('Save'));
     $this->assertResponse(200);
 
     // Post flush, expected 1 image in the 'public' wrapper (sample.png).

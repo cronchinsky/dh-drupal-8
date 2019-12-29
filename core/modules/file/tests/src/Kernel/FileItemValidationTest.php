@@ -35,6 +35,7 @@ class FileItemValidationTest extends KernelTestBase {
   protected function setUp() {
     parent::setUp();
 
+    $this->installEntitySchema('entity_test');
     $this->installEntitySchema('user');
     $this->installEntitySchema('file');
     $this->installSchema('file', 'file_usage');
@@ -78,9 +79,9 @@ class FileItemValidationTest extends KernelTestBase {
         'default' => [
           'files' => [
             'test.txt' => str_repeat('a', 3000),
-          ]
-        ]
-      ]
+          ],
+        ],
+      ],
     ]);
 
     // Test for max filesize.
@@ -95,7 +96,7 @@ class FileItemValidationTest extends KernelTestBase {
       'uid' => $this->user->id(),
       'field_test_file' => [
         'target_id' => $file->id(),
-      ]
+      ],
     ]);
     $result = $entity_test->validate();
     $this->assertCount(2, $result);

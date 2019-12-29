@@ -50,9 +50,9 @@ class ConfigDependencyTest extends EntityKernelTestBase {
         'id' => 'entity1',
         'dependencies' => [
           'enforced' => [
-            'module' => ['node']
-          ]
-        ]
+            'module' => ['node'],
+          ],
+        ],
       ]
     );
     $entity1->save();
@@ -117,7 +117,7 @@ class ConfigDependencyTest extends EntityKernelTestBase {
       'type' => 'entity_test',
     ]);
     $entity_test->save();
-    $entity2->setEnforcedDependencies(['config' => [$entity1->getConfigDependencyName()], 'content' => [$entity_test->getConfigDependencyName()]])->save();;
+    $entity2->setEnforcedDependencies(['config' => [$entity1->getConfigDependencyName()], 'content' => [$entity_test->getConfigDependencyName()]])->save();
     $dependents = $config_manager->findConfigEntityDependents('content', [$entity_test->getConfigDependencyName()]);
     $this->assertFalse(isset($dependents['config_test.dynamic.entity1']), 'config_test.dynamic.entity1 does not have a dependency on the content entity.');
     $this->assertTrue(isset($dependents['config_test.dynamic.entity2']), 'config_test.dynamic.entity2 has a dependency on the content entity.');
@@ -175,7 +175,7 @@ class ConfigDependencyTest extends EntityKernelTestBase {
 
     // Add a fake missing dependency to ensure multiple missing dependencies
     // work.
-    $entity1->setEnforcedDependencies(['content' => [$entity_test->getConfigDependencyName(), 'entity_test:bundle:uuid']])->save();;
+    $entity1->setEnforcedDependencies(['content' => [$entity_test->getConfigDependencyName(), 'entity_test:bundle:uuid']])->save();
     $expected['uuid'] = [
       'entity_type' => 'entity_test',
       'bundle' => 'bundle',
@@ -200,7 +200,7 @@ class ConfigDependencyTest extends EntityKernelTestBase {
         'id' => 'entity1',
         'dependencies' => [
           'enforced' => [
-            'module' => ['node', 'config_test']
+            'module' => ['node', 'config_test'],
           ],
         ],
       ]
@@ -264,7 +264,7 @@ class ConfigDependencyTest extends EntityKernelTestBase {
         'id' => 'entity_' . $entity_id_suffixes[0],
         'dependencies' => [
           'enforced' => [
-            'module' => ['node', 'config_test']
+            'module' => ['node', 'config_test'],
           ],
         ],
       ]
@@ -309,7 +309,7 @@ class ConfigDependencyTest extends EntityKernelTestBase {
         'dependencies' => [
           'enforced' => [
             'config' => [$entity_1->getConfigDependencyName()],
-            'module' => ['node', 'config_test']
+            'module' => ['node', 'config_test'],
           ],
         ],
       ]
@@ -508,7 +508,7 @@ class ConfigDependencyTest extends EntityKernelTestBase {
     // Test dependencies between configuration entities.
     $entity1 = $storage->create(
       [
-        'id' => 'entity1'
+        'id' => 'entity1',
       ]
     );
     $entity1->save();
@@ -621,7 +621,7 @@ class ConfigDependencyTest extends EntityKernelTestBase {
         'id' => 'entity1',
         'dependencies' => [
           'enforced' => [
-            'content' => [$content_entity->getConfigDependencyName()]
+            'content' => [$content_entity->getConfigDependencyName()],
           ],
         ],
       ]
@@ -632,7 +632,7 @@ class ConfigDependencyTest extends EntityKernelTestBase {
         'id' => 'entity2',
         'dependencies' => [
           'enforced' => [
-            'config' => [$entity1->getConfigDependencyName()]
+            'config' => [$entity1->getConfigDependencyName()],
           ],
         ],
       ]

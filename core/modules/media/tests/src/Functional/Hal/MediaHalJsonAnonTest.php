@@ -53,7 +53,7 @@ class MediaHalJsonAnonTest extends MediaResourceTestBase {
         ],
         $this->baseUrl . '/rest/relation/media/camelids/field_media_file' => [
           [
-            'href' => $file->url(),
+            'href' => $file->createFileUrl(FALSE),
             'lang' => 'en',
           ],
         ],
@@ -64,7 +64,7 @@ class MediaHalJsonAnonTest extends MediaResourceTestBase {
         ],
         $this->baseUrl . '/rest/relation/media/camelids/thumbnail' => [
           [
-            'href' => $thumbnail->url(),
+            'href' => $thumbnail->createFileUrl(FALSE),
             'lang' => 'en',
           ],
         ],
@@ -80,7 +80,7 @@ class MediaHalJsonAnonTest extends MediaResourceTestBase {
           [
             '_links' => [
               'self' => [
-                'href' => $file->url(),
+                'href' => $file->createFileUrl(FALSE),
               ],
               'type' => [
                 'href' => $this->baseUrl . '/rest/type/file/file',
@@ -115,7 +115,7 @@ class MediaHalJsonAnonTest extends MediaResourceTestBase {
           [
             '_links' => [
               'self' => [
-                'href' => $thumbnail->url(),
+                'href' => $thumbnail->createFileUrl(FALSE),
               ],
               'type' => [
                 'href' => $this->baseUrl . '/rest/type/file/file',
@@ -145,6 +145,60 @@ class MediaHalJsonAnonTest extends MediaResourceTestBase {
               ],
             ],
             'lang' => 'en',
+          ],
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getExpectedNormalizedFileEntity() {
+    $normalization = parent::getExpectedNormalizedFileEntity();
+
+    $owner = static::$auth ? $this->account : User::load(0);
+
+    // Cannot use applyHalFieldNormalization() as it uses the $entity property
+    // from the test class, which in the case of file upload tests, is the
+    // parent entity test entity for the file that's created.
+
+    // The HAL normalization adds entity reference fields to '_links' and
+    // '_embedded'.
+    unset($normalization['uid']);
+
+    return $normalization + [
+      '_links' => [
+        'self' => [
+          // @todo This can use a proper link once
+          // https://www.drupal.org/project/drupal/issues/2907402 is complete.
+          // This link matches what is generated from from File::url(), a
+          // resource URL is currently not available.
+          'href' => file_create_url($normalization['uri'][0]['value']),
+        ],
+        'type' => [
+          'href' => $this->baseUrl . '/rest/type/file/file',
+        ],
+        $this->baseUrl . '/rest/relation/file/file/uid' => [
+          ['href' => $this->baseUrl . '/user/' . $owner->id() . '?_format=hal_json'],
+        ],
+      ],
+      '_embedded' => [
+        $this->baseUrl . '/rest/relation/file/file/uid' => [
+          [
+            '_links' => [
+              'self' => [
+                'href' => $this->baseUrl . '/user/' . $owner->id() . '?_format=hal_json',
+              ],
+              'type' => [
+                'href' => $this->baseUrl . '/rest/type/user/user',
+              ],
+            ],
+            'uuid' => [
+              [
+                'value' => $owner->uuid(),
+              ],
+            ],
           ],
         ],
       ],

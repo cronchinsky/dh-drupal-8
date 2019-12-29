@@ -3,9 +3,9 @@
 namespace Drupal\Tests\taxonomy\Functional;
 
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
-use Drupal\field\Tests\EntityReference\EntityReferenceTestTrait;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\language\Entity\ConfigurableLanguage;
+use Drupal\Tests\field\Traits\EntityReferenceTestTrait;
 
 /**
  * Provides common testing base for translated taxonomy terms.
@@ -17,7 +17,7 @@ trait TaxonomyTranslationTestTrait {
   /**
    * The vocabulary.
    *
-   * @var \Drupal\taxonomy\Entity\Vocabulary;
+   * @var \Drupal\taxonomy\Entity\Vocabulary
    */
   protected $vocabulary;
 
@@ -66,9 +66,7 @@ trait TaxonomyTranslationTestTrait {
     \Drupal::service('content_translation.manager')->setEnabled('node', 'article', TRUE);
     \Drupal::service('content_translation.manager')->setEnabled('taxonomy_term', $this->vocabulary->id(), TRUE);
     drupal_static_reset();
-    \Drupal::entityManager()->clearCachedDefinitions();
     \Drupal::service('router.builder')->rebuild();
-    \Drupal::service('entity.definition_update_manager')->applyUpdates();
   }
 
   /**

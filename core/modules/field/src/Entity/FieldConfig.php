@@ -15,6 +15,13 @@ use Drupal\field\FieldConfigInterface;
  * @ConfigEntityType(
  *   id = "field_config",
  *   label = @Translation("Field"),
+ *   label_collection = @Translation("Fields"),
+ *   label_singular = @Translation("field"),
+ *   label_plural = @Translation("fields"),
+ *   label_count = @PluralTranslation(
+ *     singular = "@count field",
+ *     plural = "@count fields",
+ *   ),
  *   handlers = {
  *     "access" = "Drupal\field\FieldConfigAccessControlHandler",
  *     "storage" = "Drupal\field\FieldConfigStorage"
@@ -155,7 +162,7 @@ class FieldConfig extends FieldConfigBase implements FieldConfigInterface {
 
     if ($this->isNew()) {
       // Notify the entity storage.
-      $entity_manager->onFieldDefinitionCreate($this);
+      \Drupal::service('field_definition.listener')->onFieldDefinitionCreate($this);
     }
     else {
       // Some updates are always disallowed.
@@ -169,7 +176,7 @@ class FieldConfig extends FieldConfigBase implements FieldConfigInterface {
         throw new FieldException("Cannot change an existing field's storage.");
       }
       // Notify the entity storage.
-      $entity_manager->onFieldDefinitionUpdate($this, $this->original);
+      \Drupal::service('field_definition.listener')->onFieldDefinitionUpdate($this, $this->original);
     }
 
     parent::preSave($storage);
@@ -216,12 +223,12 @@ class FieldConfig extends FieldConfigBase implements FieldConfigInterface {
    */
   public static function postDelete(EntityStorageInterface $storage, array $fields) {
     // Clear the cache upfront, to refresh the results of getBundles().
-    \Drupal::entityManager()->clearCachedFieldDefinitions();
+    \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
 
     // Notify the entity storage.
     foreach ($fields as $field) {
       if (!$field->deleted) {
-        \Drupal::entityManager()->onFieldDefinitionDelete($field);
+        \Drupal::service('field_definition.listener')->onFieldDefinitionDelete($field);
       }
     }
 
@@ -289,7 +296,7 @@ class FieldConfig extends FieldConfigBase implements FieldConfigInterface {
     if (!$this->fieldStorage) {
       $field_storage_definition = NULL;
 
-      $field_storage_definitions = $this->entityManager()->getFieldStorageDefinitions($this->entity_type);
+      $field_storage_definitions = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions($this->entity_type);
       if (isset($field_storage_definitions[$this->field_name])) {
         $field_storage_definition = $field_storage_definitions[$this->field_name];
       }

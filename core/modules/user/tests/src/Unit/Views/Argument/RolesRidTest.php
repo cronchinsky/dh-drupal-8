@@ -19,11 +19,18 @@ class RolesRidTest extends UnitTestCase {
    * Tests the titleQuery method.
    *
    * @covers ::titleQuery
+   *
+   * @group legacy
+   *
+   * Note this is only a legacy test because it triggers a call to
+   * \Drupal\Core\Entity\EntityTypeInterface::getLabelCallback() which is mocked
+   * and triggers a deprecation error. Remove when ::getLabelCallback() is
+   * removed.
    */
   public function testTitleQuery() {
     $role1 = new Role([
       'id' => 'test_rid_1',
-      'label' => 'test rid 1'
+      'label' => 'test rid 1',
     ], 'user_role');
     $role2 = new Role([
       'id' => 'test_rid_2',
@@ -59,7 +66,7 @@ class RolesRidTest extends UnitTestCase {
       ->with($this->equalTo('user_role'))
       ->will($this->returnValue($role_storage));
 
-    // Set up a minimal container to satisfy Drupal\Core\Entity\Entity's
+    // Set up a minimal container to satisfy Drupal\Core\Entity\EntityBase's
     // dependency on it.
     $container = new ContainerBuilder();
     $container->set('entity.manager', $entity_manager);

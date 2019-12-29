@@ -176,7 +176,7 @@ class EntityViewsDataTest extends UnitTestCase {
       ->setSetting('max_length', 255);
 
     // A base field with cardinality > 1
-    $base_fields['string']  = BaseFieldDefinition::create('string')
+    $base_fields['string'] = BaseFieldDefinition::create('string')
       ->setLabel('Strong')
       ->setTranslatable(TRUE)
       ->setCardinality(2);
@@ -457,7 +457,7 @@ class EntityViewsDataTest extends UnitTestCase {
         ->setLabel('ID')
         ->setDescription('The ID of the user entity.')
         ->setReadOnly(TRUE)
-        ->setSetting('unsigned', TRUE)
+        ->setSetting('unsigned', TRUE),
     ];
     $this->entityManager->expects($this->any())
       ->method('getBaseFieldDefinitions')
@@ -578,7 +578,7 @@ class EntityViewsDataTest extends UnitTestCase {
         ->setLabel('ID')
         ->setDescription('The ID of the user entity.')
         ->setReadOnly(TRUE)
-        ->setSetting('unsigned', TRUE)
+        ->setSetting('unsigned', TRUE),
     ];
     $entity_test_type = new ConfigEntityType(['id' => 'entity_test_bundle']);
 
@@ -730,7 +730,7 @@ class EntityViewsDataTest extends UnitTestCase {
         ->setLabel('ID')
         ->setDescription('The ID of the user entity.')
         ->setReadOnly(TRUE)
-        ->setSetting('unsigned', TRUE)
+        ->setSetting('unsigned', TRUE),
     ];
     $this->entityManager->expects($this->any())
       ->method('getBaseFieldDefinitions')
@@ -973,7 +973,36 @@ class EntityViewsDataTest extends UnitTestCase {
   public function testGetViewsDataWithEntityOperations() {
     $this->baseEntityType->setListBuilderClass('\Drupal\Core\Entity\EntityListBuilder');
     $data = $this->viewsData->getViewsData();
-    $this->assertSame('entity_operations', $data[$this->baseEntityType->getBaseTable()]['operations']['field']['id']);
+
+    $tables = ['entity_test', 'entity_test_revision'];
+    $this->assertSame($tables, array_keys($data));
+    foreach ($tables as $table_name) {
+      $this->assertSame('entity_operations', $data[$table_name]['operations']['field']['id']);
+    }
+  }
+
+  /**
+   * @covers ::getViewsData
+   */
+  public function testGetViewsDataWithNonRevisionableEntityOperations() {
+    $this->baseEntityType->setListBuilderClass('\Drupal\Core\Entity\EntityListBuilder');
+
+    $entity_type_without_revisions = $this->baseEntityType;
+    $views_data = $this->viewsData;
+
+    $entity_type_keys = $entity_type_without_revisions->getKeys();
+    unset($entity_type_keys['revision']);
+
+    $entity_type_without_revisions->set('entity_keys', $entity_type_keys);
+    $views_data->setEntityType($entity_type_without_revisions);
+
+    $data = $views_data->getViewsData();
+
+    $tables = ['entity_test'];
+    $this->assertSame($tables, array_keys($data));
+    foreach ($tables as $table_name) {
+      $this->assertSame('entity_operations', $data[$table_name]['operations']['field']['id']);
+    }
   }
 
   /**
@@ -1134,16 +1163,20 @@ class TestEntityType extends ContentEntityType {
 namespace Drupal\entity_test\Entity;
 
 if (!function_exists('t')) {
+
   function t($string, array $args = []) {
     return strtr($string, $args);
   }
+
 }
 
 
 namespace Drupal\Core\Entity;
 
 if (!function_exists('t')) {
+
   function t($string, array $args = []) {
     return strtr($string, $args);
   }
+
 }

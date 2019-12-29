@@ -124,7 +124,7 @@ class SiteSettingsForm extends FormBase {
       $form['settings'][$key]['#states'] = [
         'visible' => [
           ':input[name=driver]' => ['value' => $key],
-        ]
+        ],
       ];
     }
 
@@ -190,7 +190,7 @@ class SiteSettingsForm extends FormBase {
     if (count($errors)) {
       $error_message = [
         '#type' => 'inline_template',
-        '#template' => '{% trans %}Resolve all issues below to continue the installation. For help configuring your database server, see the <a href="https://www.drupal.org/getting-started/install">installation handbook</a>, or contact your hosting provider.{% endtrans%}{{ errors }}',
+        '#template' => '{% trans %}Resolve all issues below to continue the installation. For help configuring your database server, see the <a href="https://www.drupal.org/docs/8/install">installation handbook</a>, or contact your hosting provider.{% endtrans%}{{ errors }}',
         '#context' => [
           'errors' => [
             '#theme' => 'item_list',
@@ -223,11 +223,6 @@ class SiteSettingsForm extends FormBase {
     ];
     $settings['settings']['hash_salt'] = (object) [
       'value'    => Crypt::randomBytesBase64(55),
-      'required' => TRUE,
-    ];
-    // Remember the profile which was used.
-    $settings['settings']['install_profile'] = (object) [
-      'value' => $install_state['parameters']['profile'],
       'required' => TRUE,
     ];
 

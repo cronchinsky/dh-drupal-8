@@ -103,7 +103,7 @@ abstract class WizardPluginBase extends PluginBase implements WizardInterface {
    * By default, filters are not exposed and added to the first non-reserved
    * filter group.
    *
-   * @var array()
+   * @var array
    */
   protected $filter_defaults = [
     'id' => NULL,
@@ -177,7 +177,7 @@ abstract class WizardPluginBase extends PluginBase implements WizardInterface {
           'plugin_id' => 'boolean',
           'entity_type' => $this->entityTypeId,
           'entity_field' => $field_name,
-        ]
+        ],
       ] + $this->filters;
     }
 
@@ -928,6 +928,7 @@ abstract class WizardPluginBase extends PluginBase implements WizardInterface {
       // example, is stored in taxonomy_vocabulary, not taxonomy_term_data.
       module_load_include('inc', 'views_ui', 'admin');
       $fields = Views::viewsDataHelper()->fetchFields($this->base_table, 'filter');
+      $table = FALSE;
       if (isset($fields[$this->base_table . '.' . $bundle_key])) {
         $table = $this->base_table;
       }
@@ -939,27 +940,34 @@ abstract class WizardPluginBase extends PluginBase implements WizardInterface {
           }
         }
       }
-      $table_data = Views::viewsData()->get($table);
-      // If the 'in' operator is being used, map the values to an array.
-      $handler = $table_data[$bundle_key]['filter']['id'];
-      $handler_definition = Views::pluginManager('filter')->getDefinition($handler);
-      if ($handler == 'in_operator' || is_subclass_of($handler_definition['class'], 'Drupal\\views\\Plugin\\views\\filter\\InOperator')) {
-        $value = [$type => $type];
-      }
-      // Otherwise, use just a single value.
-      else {
-        $value = $type;
-      }
+      // Some entities have bundles but don't provide their bundle data on the
+      // base table. In this case the entities wizard should provide a
+      // relationship to the relevant data.
+      // @see \Drupal\node\Plugin\views\wizard\NodeRevision
+      if (!empty($table)) {
+        $table_data = Views::viewsData()->get($table);
+        // If the 'in' operator is being used, map the values to an array.
+        $handler = $table_data[$bundle_key]['filter']['id'];
+        $handler_definition = Views::pluginManager('filter')
+          ->getDefinition($handler);
+        if ($handler == 'in_operator' || is_subclass_of($handler_definition['class'], 'Drupal\\views\\Plugin\\views\\filter\\InOperator')) {
+          $value = [$type => $type];
+        }
+        // Otherwise, use just a single value.
+        else {
+          $value = $type;
+        }
 
-      $filters[$bundle_key] = [
-        'id' => $bundle_key,
-        'table' => $table,
-        'field' => $bundle_key,
-        'value' => $value,
-        'entity_type' => isset($table_data['table']['entity type']) ? $table_data['table']['entity type'] : NULL,
-        'entity_field' => isset($table_data[$bundle_key]['entity field']) ? $table_data[$bundle_key]['entity field'] : NULL,
-        'plugin_id' => $handler,
-      ];
+        $filters[$bundle_key] = [
+          'id' => $bundle_key,
+          'table' => $table,
+          'field' => $bundle_key,
+          'value' => $value,
+          'entity_type' => isset($table_data['table']['entity type']) ? $table_data['table']['entity type'] : NULL,
+          'entity_field' => isset($table_data[$bundle_key]['entity field']) ? $table_data[$bundle_key]['entity field'] : NULL,
+          'plugin_id' => $handler,
+        ];
+      }
     }
 
     return $filters;

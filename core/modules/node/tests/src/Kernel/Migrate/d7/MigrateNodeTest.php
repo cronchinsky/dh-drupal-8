@@ -24,13 +24,12 @@ class MigrateNodeTest extends MigrateDrupal7TestBase {
     'content_translation',
     'comment',
     'datetime',
-    'file',
-    'filter',
-    'forum',
     'image',
     'language',
     'link',
     'menu_ui',
+    // Required for translation migrations.
+    'migrate_drupal_multilingual',
     'node',
     'taxonomy',
     'telephone',
@@ -45,29 +44,22 @@ class MigrateNodeTest extends MigrateDrupal7TestBase {
 
     $this->fileMigrationSetup();
 
-    $this->installEntitySchema('node');
     $this->installEntitySchema('comment');
     $this->installEntitySchema('taxonomy_term');
-    $this->installConfig(static::$modules);
     $this->installSchema('comment', ['comment_entity_statistics']);
-    $this->installSchema('forum', ['forum', 'forum_index']);
     $this->installSchema('node', ['node_access']);
-    $this->installSchema('system', ['sequences']);
 
+    $this->migrateUsers();
+    $this->migrateFields();
     $this->executeMigrations([
       'language',
-      'd7_user_role',
-      'd7_user',
-      'd7_node_type',
       'd7_language_content_settings',
-      'd7_comment_type',
       'd7_comment_field',
       'd7_comment_field_instance',
-      'd7_taxonomy_vocabulary',
-      'd7_field',
-      'd7_field_instance',
       'd7_node',
       'd7_node_translation',
+      'd7_entity_translation_settings',
+      'd7_node_entity_translation',
     ]);
   }
 
@@ -151,12 +143,15 @@ class MigrateNodeTest extends MigrateDrupal7TestBase {
    * Test node migration from Drupal 7 to 8.
    */
   public function testNode() {
-    $this->assertEntity(1, 'test_content_type', 'en', 'A Node', '2', TRUE, '1421727515', '1441032132', TRUE, FALSE);
-    $this->assertRevision(1, 'A Node', '1', NULL, '1441032132');
+    $this->assertEntity(1, 'test_content_type', 'en', 'An English Node', '2', TRUE, '1421727515', '1441032132', TRUE, FALSE);
+    $this->assertRevision(1, 'An English Node', '1', NULL, '1441032132');
 
     $node = Node::load(1);
     $this->assertTrue($node->field_boolean->value);
     $this->assertEquals('99-99-99-99', $node->field_phone->value);
+    $this->assertSame('2015-01-20T04:15:00', $node->field_date->value);
+    $this->assertSame('2015-01-20', $node->field_date_without_time->value);
+    $this->assertSame('2015-01-20', $node->field_datetime_without_time->value);
     $this->assertEquals('1', $node->field_float->value);
     $this->assertEquals('5', $node->field_integer->value);
     $this->assertEquals('Some more text', $node->field_text_list[0]->value);
@@ -215,6 +210,44 @@ class MigrateNodeTest extends MigrateDrupal7TestBase {
 
     $node = Node::load(7);
     $this->assertEquals(CommentItemInterface::OPEN, $node->comment_forum->status);
+  }
+
+  /**
+   * Test node entity translations migration from Drupal 7 to 8.
+   */
+  public function testNodeEntityTranslations() {
+    $manager = $this->container->get('content_translation.manager');
+
+    // Get the node and its translations.
+    $node = Node::load(1);
+    $node_fr = $node->getTranslation('fr');
+    $node_is = $node->getTranslation('is');
+
+    // Test that fields translated with Entity Translation are migrated.
+    $this->assertSame('An English Node', $node->getTitle());
+    $this->assertSame('A French Node', $node_fr->getTitle());
+    $this->assertSame('An Icelandic Node', $node_is->getTitle());
+    $this->assertSame('5', $node->field_integer->value);
+    $this->assertSame('6', $node_fr->field_integer->value);
+    $this->assertSame('7', $node_is->field_integer->value);
+
+    // Test that the French translation metadata is correctly migrated.
+    $metadata_fr = $manager->getTranslationMetadata($node_fr);
+    $this->assertSame('en', $metadata_fr->getSource());
+    $this->assertTrue($metadata_fr->isOutdated());
+    $this->assertSame('2', $node_fr->getOwnerId());
+    $this->assertSame('1529615802', $node_fr->getCreatedTime());
+    $this->assertSame('1529615802', $node_fr->getChangedTime());
+    $this->assertTrue($node_fr->isPublished());
+
+    // Test that the Icelandic translation metadata is correctly migrated.
+    $metadata_is = $manager->getTranslationMetadata($node_is);
+    $this->assertSame('en', $metadata_is->getSource());
+    $this->assertFalse($metadata_is->isOutdated());
+    $this->assertSame('1', $node_is->getOwnerId());
+    $this->assertSame('1529615813', $node_is->getCreatedTime());
+    $this->assertSame('1529615813', $node_is->getChangedTime());
+    $this->assertFalse($node_is->isPublished());
   }
 
 }

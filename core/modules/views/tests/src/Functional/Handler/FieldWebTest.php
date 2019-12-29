@@ -3,7 +3,6 @@
 namespace Drupal\Tests\views\Functional\Handler;
 
 use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Render\RenderContext;
 use Drupal\Core\Url;
@@ -65,9 +64,9 @@ class FieldWebTest extends ViewTestBase {
     $this->assertResponse(200);
 
     // Only the id and name should be click sortable, but not the name.
-    $this->assertLinkByHref(\Drupal::url('<none>', [], ['query' => ['order' => 'id', 'sort' => 'asc']]));
-    $this->assertLinkByHref(\Drupal::url('<none>', [], ['query' => ['order' => 'name', 'sort' => 'desc']]));
-    $this->assertNoLinkByHref(\Drupal::url('<none>', [], ['query' => ['order' => 'created']]));
+    $this->assertLinkByHref(Url::fromRoute('<none>', [], ['query' => ['order' => 'id', 'sort' => 'asc']])->toString());
+    $this->assertLinkByHref(Url::fromRoute('<none>', [], ['query' => ['order' => 'name', 'sort' => 'desc']])->toString());
+    $this->assertNoLinkByHref(Url::fromRoute('<none>', [], ['query' => ['order' => 'created']])->toString());
 
     // Check that the view returns the click sorting cache contexts.
     $expected_contexts = [
@@ -79,7 +78,7 @@ class FieldWebTest extends ViewTestBase {
 
     // Clicking a click sort should change the order.
     $this->clickLink(t('ID'));
-    $this->assertLinkByHref(\Drupal::url('<none>', [], ['query' => ['order' => 'id', 'sort' => 'desc']]));
+    $this->assertLinkByHref(Url::fromRoute('<none>', [], ['query' => ['order' => 'id', 'sort' => 'desc']])->toString());
     // Check that the output has the expected order (asc).
     $ids = $this->clickSortLoadIdsFromOutput();
     $this->assertEqual($ids, range(1, 5));
@@ -229,28 +228,28 @@ class FieldWebTest extends ViewTestBase {
       $alter = &$id_field->options['alter'];
       $alter['path'] = 'node/123';
 
-      $expected_result = \Drupal::url('entity.node.canonical', ['node' => '123'], ['absolute' => $absolute]);
+      $expected_result = Url::fromRoute('entity.node.canonical', ['node' => '123'], ['absolute' => $absolute])->toString();
       $alter['absolute'] = $absolute;
       $result = $renderer->executeInRenderContext(new RenderContext(), function () use ($id_field, $row) {
         return $id_field->theme($row);
       });
       $this->assertSubString($result, $expected_result);
 
-      $expected_result = \Drupal::url('entity.node.canonical', ['node' => '123'], ['fragment' => 'foo', 'absolute' => $absolute]);
+      $expected_result = Url::fromRoute('entity.node.canonical', ['node' => '123'], ['fragment' => 'foo', 'absolute' => $absolute])->toString();
       $alter['path'] = 'node/123#foo';
       $result = $renderer->executeInRenderContext(new RenderContext(), function () use ($id_field, $row) {
         return $id_field->theme($row);
       });
       $this->assertSubString($result, $expected_result);
 
-      $expected_result = \Drupal::url('entity.node.canonical', ['node' => '123'], ['query' => ['foo' => NULL], 'absolute' => $absolute]);
+      $expected_result = Url::fromRoute('entity.node.canonical', ['node' => '123'], ['query' => ['foo' => NULL], 'absolute' => $absolute])->toString();
       $alter['path'] = 'node/123?foo';
       $result = $renderer->executeInRenderContext(new RenderContext(), function () use ($id_field, $row) {
         return $id_field->theme($row);
       });
       $this->assertSubString($result, $expected_result);
 
-      $expected_result = \Drupal::url('entity.node.canonical', ['node' => '123'], ['query' => ['foo' => 'bar', 'bar' => 'baz'], 'absolute' => $absolute]);
+      $expected_result = Url::fromRoute('entity.node.canonical', ['node' => '123'], ['query' => ['foo' => 'bar', 'bar' => 'baz'], 'absolute' => $absolute])->toString();
       $alter['path'] = 'node/123?foo=bar&bar=baz';
       $result = $renderer->executeInRenderContext(new RenderContext(), function () use ($id_field, $row) {
         return $id_field->theme($row);
@@ -258,7 +257,7 @@ class FieldWebTest extends ViewTestBase {
       $this->assertSubString(Html::decodeEntities($result), Html::decodeEntities($expected_result));
 
       // @todo The route-based URL generator strips out NULL attributes.
-      // $expected_result = \Drupal::url('entity.node.canonical', ['node' => '123'], ['query' => ['foo' => NULL], 'fragment' => 'bar', 'absolute' => $absolute]);
+      // $expected_result = Url::fromRoute('entity.node.canonical', ['node' => '123'], ['query' => ['foo' => NULL], 'fragment' => 'bar', 'absolute' => $absolute])->toString();
       $expected_result = Url::fromUserInput('/node/123', ['query' => ['foo' => NULL], 'fragment' => 'bar', 'absolute' => $absolute])->toString();
       $alter['path'] = 'node/123?foo#bar';
       $result = $renderer->executeInRenderContext(new RenderContext(), function () use ($id_field, $row) {
@@ -266,7 +265,7 @@ class FieldWebTest extends ViewTestBase {
       });
       $this->assertSubString(Html::decodeEntities($result), Html::decodeEntities($expected_result));
 
-      $expected_result = \Drupal::url('<front>', [], ['absolute' => $absolute]);
+      $expected_result = Url::fromRoute('<front>', [], ['absolute' => $absolute])->toString();
       $alter['path'] = '<front>';
       $result = $renderer->executeInRenderContext(new RenderContext(), function () use ($id_field, $row) {
         return $id_field->theme($row);
@@ -340,7 +339,7 @@ class FieldWebTest extends ViewTestBase {
     $this->assertSubString($output, UrlHelper::encodePath('Drupal Has A Great Community'));
     unset($id_field->options['alter']['path_case']);
 
-    // Tests the linkclass setting and see whether it actually exists in the
+    // Tests the link_class setting and see whether it actually exists in the
     // output.
     $id_field->options['alter']['link_class'] = $class = $this->randomMachineName();
     $output = $renderer->executeInRenderContext(new RenderContext(), function () use ($id_field, $row) {
@@ -484,7 +483,7 @@ class FieldWebTest extends ViewTestBase {
       'p',
       'strong',
       'em',
-      'marquee'
+      'marquee',
     ];
 
     $this->assertEqual(array_keys($element_types), $expected_elements);
@@ -556,7 +555,7 @@ class FieldWebTest extends ViewTestBase {
     // Tests for simple trimming by string length.
     $row->views_test_data_name = $this->randomMachineName(8);
     $name_field->options['alter']['max_length'] = 5;
-    $trimmed_name = Unicode::substr($row->views_test_data_name, 0, 5);
+    $trimmed_name = mb_substr($row->views_test_data_name, 0, 5);
 
     $output = $renderer->executeInRenderContext(new RenderContext(), function () use ($name_field, $row) {
       return $name_field->advancedRender($row);
@@ -581,28 +580,28 @@ class FieldWebTest extends ViewTestBase {
       [
         'value' => $random_text_8,
         'trimmed_value' => '',
-        'trimmed' => TRUE
+        'trimmed' => TRUE,
       ],
       // Create one string with two words which doesn't fit both into the limit.
       [
         'value' => $random_text_8 . ' ' . $random_text_8,
         'trimmed_value' => '',
-        'trimmed' => TRUE
+        'trimmed' => TRUE,
       ],
       // Create one string which contains of two words, of which only the first
       // fits into the limit.
       [
         'value' => $random_text_4 . ' ' . $random_text_8,
         'trimmed_value' => $random_text_4,
-        'trimmed' => TRUE
+        'trimmed' => TRUE,
       ],
       // Create one string which contains of two words, of which both fits into
       // the limit.
       [
         'value' => $random_text_2 . ' ' . $random_text_2,
         'trimmed_value' => $random_text_2 . ' ' . $random_text_2,
-        'trimmed' => FALSE
-      ]
+        'trimmed' => FALSE,
+      ],
     ];
 
     foreach ($tuples as $tuple) {

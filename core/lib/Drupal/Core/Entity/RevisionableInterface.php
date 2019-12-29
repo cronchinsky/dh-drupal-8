@@ -20,7 +20,7 @@ namespace Drupal\Core\Entity;
  * @see https://www.drupal.org/docs/8/api/entity-api/structure-of-an-entity-annotation
  * @see https://www.drupal.org/docs/8/api/entity-api/making-an-entity-revisionable
  */
-interface RevisionableInterface {
+interface RevisionableInterface extends EntityInterface {
 
   /**
    * Determines whether a new revision should be created on save.
@@ -53,6 +53,27 @@ interface RevisionableInterface {
    *   have a revision identifier.
    */
   public function getRevisionId();
+
+  /**
+   * Gets the loaded Revision ID of the entity.
+   *
+   * @return int
+   *   The loaded Revision identifier of the entity, or NULL if the entity
+   *   does not have a revision identifier.
+   */
+  public function getLoadedRevisionId();
+
+  /**
+   * Updates the loaded Revision ID with the revision ID.
+   *
+   * This method should not be used, it could unintentionally cause the original
+   * revision ID property value to be lost.
+   *
+   * @internal
+   *
+   * @return $this
+   */
+  public function updateLoadedRevisionId();
 
   /**
    * Checks if this entity is the default revision.

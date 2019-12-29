@@ -4,6 +4,7 @@ namespace Drupal\hal\Normalizer;
 
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\TypedData\TypedDataInternalPropertiesHelper;
+use Drupal\serialization\Normalizer\FieldableEntityNormalizerTrait;
 use Drupal\serialization\Normalizer\SerializedColumnNormalizerTrait;
 use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 
@@ -12,14 +13,13 @@ use Symfony\Component\Serializer\Exception\InvalidArgumentException;
  */
 class FieldItemNormalizer extends NormalizerBase {
 
+  use FieldableEntityNormalizerTrait;
   use SerializedColumnNormalizerTrait;
 
   /**
-   * The interface or class that this Normalizer supports.
-   *
-   * @var string
+   * {@inheritdoc}
    */
-  protected $supportedInterfaceOrClass = 'Drupal\Core\Field\FieldItemInterface';
+  protected $supportedInterfaceOrClass = FieldItemInterface::class;
 
   /**
    * {@inheritdoc}
@@ -64,34 +64,6 @@ class FieldItemNormalizer extends NormalizerBase {
   }
 
   /**
-   * Build the field item value using the incoming data.
-   *
-   * @param $data
-   *   The incoming data for this field item.
-   * @param $context
-   *   The context passed into the Normalizer.
-   *
-   * @return mixed
-   *   The value to use in Entity::setValue().
-   */
-  protected function constructValue($data, $context) {
-    /** @var \Drupal\Core\Field\FieldItemInterface $field_item */
-    $field_item = $context['target_instance'];
-    $serialized_property_names = $this->getCustomSerializedPropertyNames($field_item);
-
-    // Explicitly serialize the input, unlike properties that rely on
-    // being automatically serialized, manually managed serialized properties
-    // expect to receive serialized input.
-    foreach ($serialized_property_names as $serialized_property_name) {
-      if (is_array($data) && array_key_exists($serialized_property_name, $data)) {
-        $data[$serialized_property_name] = serialize($data[$serialized_property_name]);
-      }
-    }
-
-    return $data;
-  }
-
-  /**
    * Normalizes field values for an item.
    *
    * @param \Drupal\Core\Field\FieldItemInterface $field_item
@@ -109,7 +81,10 @@ class FieldItemNormalizer extends NormalizerBase {
     // We normalize each individual property, so each can do their own casting,
     // if needed.
     /** @var \Drupal\Core\TypedData\TypedDataInterface $property */
-    foreach (TypedDataInternalPropertiesHelper::getNonInternalProperties($field_item) as $property_name => $property) {
+    $field_properties = !empty($field_item->getProperties(TRUE))
+      ? TypedDataInternalPropertiesHelper::getNonInternalProperties($field_item)
+      : $field_item->getValue();
+    foreach ($field_properties as $property_name => $property) {
       $normalized[$property_name] = $this->serializer->normalize($property, $format, $context);
     }
 

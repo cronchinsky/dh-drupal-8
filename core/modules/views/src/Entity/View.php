@@ -19,6 +19,14 @@ use Drupal\views\ViewEntityInterface;
  * @ConfigEntityType(
  *   id = "view",
  *   label = @Translation("View", context = "View entity type"),
+ *   label_collection = @Translation("Views", context = "View entity type"),
+ *   label_singular = @Translation("view", context = "View entity type"),
+ *   label_plural = @Translation("views", context = "View entity type"),
+ *   label_count = @PluralTranslation(
+ *     singular = "@count view",
+ *     plural = "@count views",
+ *     context = "View entity type",
+ *   ),
  *   admin_permission = "administer views",
  *   entity_keys = {
  *     "id" = "id",
@@ -299,8 +307,10 @@ class View extends ConfigEntityBase implements ViewEntityInterface {
     ksort($displays);
     $this->set('display', ['default' => $displays['default']] + $displays);
 
-    // @todo Check whether isSyncing is needed.
-    if (!$this->isSyncing()) {
+    // Calculating the cacheability metadata is only needed when the view is
+    // saved through the UI or API. It should not be done when we are syncing
+    // configuration or installing modules.
+    if (!$this->isSyncing() && !$this->hasTrustedData()) {
       $this->addCacheMetadata();
     }
   }
@@ -423,7 +433,7 @@ class View extends ConfigEntityBase implements ViewEntityInterface {
           'position' => 0,
           'display_options' => [],
         ],
-      ]
+      ],
     ];
   }
 

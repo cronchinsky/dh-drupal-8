@@ -14,7 +14,13 @@ class MigrateTaxonomyVocabularyTranslationTest extends MigrateDrupal6TestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['language', 'taxonomy'];
+  public static $modules = [
+    'config_translation',
+    'language',
+    'taxonomy',
+    // Required for translation migrations.
+    'migrate_drupal_multilingual',
+  ];
 
   /**
    * {@inheritdoc}
@@ -32,6 +38,8 @@ class MigrateTaxonomyVocabularyTranslationTest extends MigrateDrupal6TestBase {
    */
   public function testTaxonomyVocabularyTranslation() {
     $language_manager = \Drupal::service('language_manager');
+    $config = $language_manager->getLanguageConfigOverride('zu', 'taxonomy.vocabulary.vocabulary_1_i_0_');
+    $this->assertSame('zu - vocabulary 1 (i=0)', $config->get('name'));
     $config = $language_manager->getLanguageConfigOverride('fr', 'taxonomy.vocabulary.vocabulary_1_i_0_');
     $this->assertSame('fr - vocabulary 1 (i=0)', $config->get('name'));
     $config = $language_manager->getLanguageConfigOverride('fr', 'taxonomy.vocabulary.vocabulary_2_i_1_');

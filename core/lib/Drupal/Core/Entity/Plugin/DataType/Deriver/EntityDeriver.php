@@ -2,8 +2,11 @@
 
 namespace Drupal\Core\Entity\Plugin\DataType\Deriver;
 
+use Drupal\Core\Config\Entity\ConfigEntityInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
+use Drupal\Core\Entity\Plugin\DataType\ConfigEntityAdapter;
+use Drupal\Core\Entity\Plugin\DataType\EntityAdapter;
 use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -86,18 +89,22 @@ class EntityDeriver implements ContainerDeriverInterface {
     $this->derivatives[''] = $base_plugin_definition;
     // Add definitions for each entity type and bundle.
     foreach ($this->entityManager->getDefinitions() as $entity_type_id => $entity_type) {
+      $class = $entity_type->entityClassImplements(ConfigEntityInterface::class) ? ConfigEntityAdapter::class : EntityAdapter::class;
       $this->derivatives[$entity_type_id] = [
+        'class' => $class,
         'label' => $entity_type->getLabel(),
         'constraints' => $entity_type->getConstraints(),
         'internal' => $entity_type->isInternal(),
       ] + $base_plugin_definition;
 
       // Incorporate the bundles as entity:$entity_type:$bundle, if any.
-      foreach ($this->bundleInfoService->getBundleInfo($entity_type_id) as $bundle => $bundle_info) {
-        if ($bundle !== $entity_type_id) {
+      $bundle_info = $this->bundleInfoService->getBundleInfo($entity_type_id);
+      if (count($bundle_info) > 1 || $entity_type->getKey('bundle')) {
+        foreach ($bundle_info as $bundle => $info) {
           $this->derivatives[$entity_type_id . ':' . $bundle] = [
-            'label' => $bundle_info['label'],
-            'constraints' => $this->derivatives[$entity_type_id]['constraints']
+            'class' => $class,
+            'label' => $info['label'],
+            'constraints' => $this->derivatives[$entity_type_id]['constraints'],
           ] + $base_plugin_definition;
         }
       }

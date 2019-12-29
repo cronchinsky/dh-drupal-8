@@ -2,10 +2,13 @@
 
 namespace Doctrine\Common\Persistence;
 
+use BadMethodCallException;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Persistence\Mapping\ClassMetadata;
-use function get_class;
+use Doctrine\Persistence\Mapping\ClassMetadata;
+use InvalidArgumentException;
+use RuntimeException;
+use function class_exists;
 use function lcfirst;
 use function substr;
 
@@ -25,6 +28,9 @@ use function substr;
  * 4. Slower than handcoded implementations: An average of 7 method calls per access to a field and 11 for an association.
  * 5. Only the inverse side associations get autoset on the owning side as well. Setting objects on the owning side
  *    will not set the inverse side associations.
+ *
+ * @deprecated Deprecated `PersistentObject` class in 1.2. Please implement this functionality
+ *             directly in your application if you want ActiveRecord style functionality.
  *
  * @example
  *
@@ -69,12 +75,12 @@ abstract class PersistentObject implements ObjectManagerAware
      *
      * @return void
      *
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     public function injectObjectManager(ObjectManager $objectManager, ClassMetadata $classMetadata)
     {
         if ($objectManager !== self::$objectManager) {
-            throw new \RuntimeException('Trying to use PersistentObject with different ObjectManager instances. ' .
+            throw new RuntimeException('Trying to use PersistentObject with different ObjectManager instances. ' .
                 'Was PersistentObject::setObjectManager() called?');
         }
 
@@ -89,8 +95,8 @@ abstract class PersistentObject implements ObjectManagerAware
      *
      * @return void
      *
-     * @throws \BadMethodCallException   When no persistent field exists by that name.
-     * @throws \InvalidArgumentException When the wrong target object type is passed to an association.
+     * @throws BadMethodCallException   When no persistent field exists by that name.
+     * @throws InvalidArgumentException When the wrong target object type is passed to an association.
      */
     private function set($field, $args)
     {
@@ -99,12 +105,12 @@ abstract class PersistentObject implements ObjectManagerAware
         } elseif ($this->cm->hasAssociation($field) && $this->cm->isSingleValuedAssociation($field)) {
             $targetClass = $this->cm->getAssociationTargetClass($field);
             if (! ($args[0] instanceof $targetClass) && $args[0] !== null) {
-                throw new \InvalidArgumentException("Expected persistent object of type '" . $targetClass . "'");
+                throw new InvalidArgumentException("Expected persistent object of type '" . $targetClass . "'");
             }
             $this->$field = $args[0];
             $this->completeOwningSide($field, $targetClass, $args[0]);
         } else {
-            throw new \BadMethodCallException("no field with name '" . $field . "' exists on '" . $this->cm->getName() . "'");
+            throw new BadMethodCallException("no field with name '" . $field . "' exists on '" . $this->cm->getName() . "'");
         }
     }
 
@@ -115,7 +121,7 @@ abstract class PersistentObject implements ObjectManagerAware
      *
      * @return mixed
      *
-     * @throws \BadMethodCallException When no persistent field exists by that name.
+     * @throws BadMethodCallException When no persistent field exists by that name.
      */
     private function get($field)
     {
@@ -123,7 +129,7 @@ abstract class PersistentObject implements ObjectManagerAware
             return $this->$field;
         }
 
-        throw new \BadMethodCallException("no field with name '" . $field . "' exists on '" . $this->cm->getName() . "'");
+        throw new BadMethodCallException("no field with name '" . $field . "' exists on '" . $this->cm->getName() . "'");
     }
 
     /**
@@ -158,18 +164,18 @@ abstract class PersistentObject implements ObjectManagerAware
      *
      * @return void
      *
-     * @throws \BadMethodCallException
-     * @throws \InvalidArgumentException
+     * @throws BadMethodCallException
+     * @throws InvalidArgumentException
      */
     private function add($field, $args)
     {
         if (! $this->cm->hasAssociation($field) || ! $this->cm->isCollectionValuedAssociation($field)) {
-            throw new \BadMethodCallException('There is no method add' . $field . '() on ' . $this->cm->getName());
+            throw new BadMethodCallException('There is no method add' . $field . '() on ' . $this->cm->getName());
         }
 
         $targetClass = $this->cm->getAssociationTargetClass($field);
         if (! ($args[0] instanceof $targetClass)) {
-            throw new \InvalidArgumentException("Expected persistent object of type '" . $targetClass . "'");
+            throw new InvalidArgumentException("Expected persistent object of type '" . $targetClass . "'");
         }
         if (! ($this->$field instanceof Collection)) {
             $this->$field = new ArrayCollection($this->$field ?: []);
@@ -183,7 +189,7 @@ abstract class PersistentObject implements ObjectManagerAware
      *
      * @return void
      *
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     private function initializeDoctrine()
     {
@@ -192,10 +198,10 @@ abstract class PersistentObject implements ObjectManagerAware
         }
 
         if (! self::$objectManager) {
-            throw new \RuntimeException('No runtime object manager set. Call PersistentObject#setObjectManager().');
+            throw new RuntimeException('No runtime object manager set. Call PersistentObject#setObjectManager().');
         }
 
-        $this->cm = self::$objectManager->getClassMetadata(get_class($this));
+        $this->cm = self::$objectManager->getClassMetadata(static::class);
     }
 
     /**
@@ -206,7 +212,7 @@ abstract class PersistentObject implements ObjectManagerAware
      *
      * @return mixed
      *
-     * @throws \BadMethodCallException
+     * @throws BadMethodCallException
      */
     public function __call($method, $args)
     {
@@ -221,7 +227,9 @@ abstract class PersistentObject implements ObjectManagerAware
         } elseif ($command === 'add') {
             $this->add($field, $args);
         } else {
-            throw new \BadMethodCallException('There is no method ' . $method . ' on ' . $this->cm->getName());
+            throw new BadMethodCallException('There is no method ' . $method . ' on ' . $this->cm->getName());
         }
     }
 }
+
+class_exists(\Doctrine\Common\Persistence\PersistentObject::class);

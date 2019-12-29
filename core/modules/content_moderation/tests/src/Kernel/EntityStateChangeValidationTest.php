@@ -6,8 +6,8 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
+use Drupal\Tests\content_moderation\Traits\ContentModerationTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
-use Drupal\workflows\Entity\Workflow;
 
 /**
  * @coversDefaultClass \Drupal\content_moderation\Plugin\Validation\Constraint\ModerationStateConstraintValidator
@@ -15,6 +15,7 @@ use Drupal\workflows\Entity\Workflow;
  */
 class EntityStateChangeValidationTest extends KernelTestBase {
 
+  use ContentModerationTestTrait;
   use UserCreationTrait;
 
   /**
@@ -65,7 +66,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
       'type' => 'example',
     ]);
     $node_type->save();
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addEntityTypeAndBundle('node', 'example');
     $workflow->save();
 
@@ -95,7 +96,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
       'type' => 'example',
     ]);
     $node_type->save();
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addEntityTypeAndBundle('node', 'example');
     $workflow->save();
 
@@ -121,7 +122,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
       'type' => 'example',
     ]);
     $node_type->save();
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addEntityTypeAndBundle('node', 'example');
     $workflow->save();
 
@@ -154,12 +155,13 @@ class EntityStateChangeValidationTest extends KernelTestBase {
 
     // Enable moderation to test validation on existing content, with no
     // explicit state.
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addState('deleted_state', 'Deleted state');
     $workflow->getTypePlugin()->addEntityTypeAndBundle('node', 'example');
     $workflow->save();
 
     // Validate the invalid state.
+    $node = Node::load($node->id());
     $node->moderation_state->value = 'invalid_state';
     $violations = $node->validate();
     $this->assertCount(1, $violations);
@@ -196,7 +198,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     ]);
     $node_type->save();
 
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addEntityTypeAndBundle('node', 'example');
     $workflow->save();
 
@@ -261,7 +263,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     $nid = $node->id();
 
     // Enable moderation for our node type.
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addEntityTypeAndBundle('node', 'example');
     $workflow->save();
 
@@ -309,7 +311,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
     $node_fr->save();
 
     // Enable moderation for our node type.
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addEntityTypeAndBundle('node', 'example');
     $workflow->save();
 
@@ -330,7 +332,7 @@ class EntityStateChangeValidationTest extends KernelTestBase {
       'type' => 'example',
     ]);
     $node_type->save();
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addState('foo', 'Foo');
     $workflow->getTypePlugin()->addTransition('draft_to_foo', 'Draft to foo', ['draft'], 'foo');
     $workflow->getTypePlugin()->addTransition('foo_to_foo', 'Foo to foo', ['foo'], 'foo');

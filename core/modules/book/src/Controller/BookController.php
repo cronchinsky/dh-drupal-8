@@ -122,7 +122,7 @@ class BookController extends ControllerBase {
       '#theme' => 'item_list',
       '#items' => $book_list,
       '#cache' => [
-        'tags' => \Drupal::entityManager()->getDefinition('node')->getListCacheTags(),
+        'tags' => $this->entityTypeManager()->getDefinition('node')->getListCacheTags(),
       ],
     ];
   }
@@ -154,7 +154,7 @@ class BookController extends ControllerBase {
 
     // @todo Convert the custom export functionality to serializer.
     if (!method_exists($this->bookExport, $method)) {
-      drupal_set_message(t('Unknown export format.'));
+      $this->messenger()->addStatus(t('Unknown export format.'));
       throw new NotFoundHttpException();
     }
 

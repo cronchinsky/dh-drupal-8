@@ -14,10 +14,11 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FormatterInterface;
 use Drupal\Core\Field\FormatterPluginManager;
+use Drupal\Core\Form\EnforcedResponseException;
+use Drupal\Core\Form\FormHelper;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\ContextAwarePluginInterface;
-use Drupal\Core\Render\Element;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Psr\Log\LoggerInterface;
@@ -30,6 +31,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   id = "field_block",
  *   deriver = "\Drupal\layout_builder\Plugin\Derivative\FieldBlockDeriver",
  * )
+ *
+ * @internal
+ *   Plugin classes are internal.
  */
 class FieldBlock extends BlockBase implements ContextAwarePluginInterface, ContainerFactoryPluginInterface {
 
@@ -156,15 +160,23 @@ class FieldBlock extends BlockBase implements ContextAwarePluginInterface, Conta
     try {
       $build = $entity->get($this->fieldName)->view($display_settings);
     }
+    // @todo Remove in https://www.drupal.org/project/drupal/issues/2367555.
+    catch (EnforcedResponseException $e) {
+      throw $e;
+    }
     catch (\Exception $e) {
       $build = [];
       $this->logger->warning('The field "%field" failed to render with the error of "%error".', ['%field' => $this->fieldName, '%error' => $e->getMessage()]);
     }
-    if (!empty($entity->in_preview) && !Element::getVisibleChildren($build)) {
-      $build['content']['#markup'] = new TranslatableMarkup('Placeholder for the "@field" field', ['@field' => $this->getFieldDefinition()->getLabel()]);
-    }
     CacheableMetadata::createFromObject($this)->applyTo($build);
     return $build;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPreviewFallbackString() {
+    return new TranslatableMarkup('"@field" field', ['@field' => $this->getFieldDefinition()->getLabel()]);
   }
 
   /**
@@ -270,6 +282,7 @@ class FieldBlock extends BlockBase implements ContextAwarePluginInterface, Conta
       $element['settings_wrapper']['settings']['#parents'] = array_merge($element['#parents'], ['settings']);
       $element['settings_wrapper']['third_party_settings'] = $this->thirdPartySettingsForm($formatter, $this->getFieldDefinition(), $complete_form, $form_state);
       $element['settings_wrapper']['third_party_settings']['#parents'] = array_merge($element['#parents'], ['third_party_settings']);
+      FormHelper::rewriteStatesSelector($element['settings_wrapper'], "fields[$this->fieldName][settings_edit_form]", 'settings[formatter]');
 
       // Store the array parents for our element so that we can retrieve the
       // formatter settings in our AJAX callback.

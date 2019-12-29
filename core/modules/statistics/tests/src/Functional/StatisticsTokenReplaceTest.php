@@ -9,6 +9,7 @@ namespace Drupal\Tests\statistics\Functional;
  * @group statistics
  */
 class StatisticsTokenReplaceTest extends StatisticsTestBase {
+
   /**
    * Creates a node, then tests the statistics tokens generated from it.
    */
@@ -36,8 +37,10 @@ class StatisticsTokenReplaceTest extends StatisticsTestBase {
     $tests = [];
     $tests['[node:total-count]'] = 1;
     $tests['[node:day-count]'] = 1;
-    $tests['[node:last-view]'] = format_date($statistics['timestamp']);
-    $tests['[node:last-view:short]'] = format_date($statistics['timestamp'], 'short');
+    /** @var \Drupal\Core\Datetime\DateFormatterInterface $date_formatter */
+    $date_formatter = $this->container->get('date.formatter');
+    $tests['[node:last-view]'] = $date_formatter->format($statistics['timestamp']);
+    $tests['[node:last-view:short]'] = $date_formatter->format($statistics['timestamp'], 'short');
 
     // Test to make sure that we generated something for each token.
     $this->assertFalse(in_array(0, array_map('strlen', $tests)), 'No empty tokens generated.');

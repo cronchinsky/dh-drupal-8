@@ -8,19 +8,20 @@
  * a cached page are instead located in bootstrap.inc.
  */
 
+use Drupal\Component\Gettext\PoItem;
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\Bytes;
+use Drupal\Component\Utility\Environment;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\SortArray;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Cache\Cache;
-use Drupal\Core\Render\Element\Link;
-use Drupal\Core\Render\Markup;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Core\PhpStorage\PhpStorageFactory;
-use Drupal\Core\StringTranslation\PluralTranslatableMarkup;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Render\Element\Link;
+use Drupal\Core\Render\HtmlResponseAttachmentsProcessor;
+use Drupal\Core\Render\Markup;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * @defgroup php_wrappers PHP wrapper functions
@@ -47,7 +48,7 @@ use Drupal\Core\Render\Element;
  *
  * Correct:
  * @code
- *   $my_substring = Unicode::substr($original_string, 0, 5);
+ *   $my_substring = mb_substr($original_string, 0, 5);
  * @endcode
  *
  * @}
@@ -127,10 +128,9 @@ const JS_THEME = 100;
  * The delimiter used to split plural strings.
  *
  * @deprecated in Drupal 8.0.x-dev, will be removed before Drupal 9.0.0.
- *   Use \Drupal\Core\StringTranslation\PluralTranslatableMarkup::DELIMITER
- *   instead.
+ *   Use Drupal\Component\Gettext\PoItem::DELIMITER instead.
  */
-const LOCALE_PLURAL_DELIMITER = PluralTranslatableMarkup::DELIMITER;
+const LOCALE_PLURAL_DELIMITER = PoItem::DELIMITER;
 
 /**
  * Prepares a 'destination' URL query parameter.
@@ -212,10 +212,10 @@ function valid_email_address($mail) {
  *   Drupal\Core\Template\Attribute, call
  *   \Drupal\Component\Utility\UrlHelper::stripDangerousProtocols() instead.
  *
- * @deprecated in Drupal 8.0.x-dev, will be removed before Drupal 9.0.0.
+ * @deprecated in Drupal 8.0.0 and will be removed before Drupal 9.0.0.
  *   Use UrlHelper::stripDangerousProtocols() or UrlHelper::filterBadProtocol()
  *   instead. UrlHelper::stripDangerousProtocols() can be used in conjunction
- *   with \Drupal\Component\Utility\SafeMarkup::format() and an @variable
+ *   with \Drupal\Component\Render\FormattableMarkup and an @variable
  *   placeholder which will perform the necessary escaping.
  *   UrlHelper::filterBadProtocol() is functionality equivalent to check_url()
  *   apart from the fact it is protected from double escaping bugs. Note that
@@ -226,6 +226,7 @@ function valid_email_address($mail) {
  * @see https://www.drupal.org/node/2560027
  */
 function check_url($uri) {
+  @trigger_error(__FUNCTION__ . '() is deprecated in Drupal 8.0.0 and will be removed before Drupal 9.0.0. Use UrlHelper::stripDangerousProtocols() or UrlHelper::filterBadProtocol() instead. See https://www.drupal.org/node/2560027', E_USER_DEPRECATED);
   return Html::escape(UrlHelper::stripDangerousProtocols($uri));
 }
 
@@ -252,41 +253,45 @@ function check_url($uri) {
  *   A translated string representation of the size.
  */
 function format_size($size, $langcode = NULL) {
-  if ($size < Bytes::KILOBYTE) {
+  $absolute_size = abs($size);
+  if ($absolute_size < Bytes::KILOBYTE) {
     return \Drupal::translation()->formatPlural($size, '1 byte', '@count bytes', [], ['langcode' => $langcode]);
   }
-  else {
-    // Convert bytes to kilobytes.
-    $size = $size / Bytes::KILOBYTE;
-    $units = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    foreach ($units as $unit) {
-      if (round($size, 2) >= Bytes::KILOBYTE) {
-        $size = $size / Bytes::KILOBYTE;
-      }
-      else {
-        break;
-      }
+  // Create a multiplier to preserve the sign of $size.
+  $sign = $absolute_size / $size;
+  foreach (['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] as $unit) {
+    $absolute_size /= Bytes::KILOBYTE;
+    $rounded_size = round($absolute_size, 2);
+    if ($rounded_size < Bytes::KILOBYTE) {
+      break;
     }
-    $args = ['@size' => round($size, 2)];
-    $options = ['langcode' => $langcode];
-    switch ($unit) {
-      case 'KB':
-        return new TranslatableMarkup('@size KB', $args, $options);
-      case 'MB':
-        return new TranslatableMarkup('@size MB', $args, $options);
-      case 'GB':
-        return new TranslatableMarkup('@size GB', $args, $options);
-      case 'TB':
-        return new TranslatableMarkup('@size TB', $args, $options);
-      case 'PB':
-        return new TranslatableMarkup('@size PB', $args, $options);
-      case 'EB':
-        return new TranslatableMarkup('@size EB', $args, $options);
-      case 'ZB':
-        return new TranslatableMarkup('@size ZB', $args, $options);
-      case 'YB':
-        return new TranslatableMarkup('@size YB', $args, $options);
-    }
+  }
+  $args = ['@size' => $rounded_size * $sign];
+  $options = ['langcode' => $langcode];
+  switch ($unit) {
+    case 'KB':
+      return new TranslatableMarkup('@size KB', $args, $options);
+
+    case 'MB':
+      return new TranslatableMarkup('@size MB', $args, $options);
+
+    case 'GB':
+      return new TranslatableMarkup('@size GB', $args, $options);
+
+    case 'TB':
+      return new TranslatableMarkup('@size TB', $args, $options);
+
+    case 'PB':
+      return new TranslatableMarkup('@size PB', $args, $options);
+
+    case 'EB':
+      return new TranslatableMarkup('@size EB', $args, $options);
+
+    case 'ZB':
+      return new TranslatableMarkup('@size ZB', $args, $options);
+
+    case 'YB':
+      return new TranslatableMarkup('@size YB', $args, $options);
   }
 }
 
@@ -326,19 +331,26 @@ function format_size($size, $langcode = NULL) {
  * @see https://www.drupal.org/node/1876852
  */
 function format_date($timestamp, $type = 'medium', $format = '', $timezone = NULL, $langcode = NULL) {
+  @trigger_error("format_date() is deprecated in Drupal 8.0.0 and will be removed before Drupal 9.0.0. Use \Drupal::service('date.formatter')->format() instead. See https://www.drupal.org/node/1876852", E_USER_DEPRECATED);
   return \Drupal::service('date.formatter')->format($timestamp, $type, $format, $timezone, $langcode);
 }
 
 /**
  * Returns an ISO8601 formatted date based on the given date.
  *
- * @param $date
+ * @param string $date
  *   A UNIX timestamp.
  *
  * @return string
  *   An ISO8601 formatted date.
+ *
+ * @deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. Use
+ *   date('c', $date) instead.
+ *
+ * @see https://www.drupal.org/node/2999991
  */
 function date_iso8601($date) {
+  @trigger_error('date_iso8601() is deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. Use date("c", $date) instead. See https://www.drupal.org/node/2999991.', E_USER_DEPRECATED);
   // The DATE_ISO8601 constant cannot be used here because it does not match
   // date('c') and produces invalid RDF markup.
   return date('c', $date);
@@ -351,21 +363,22 @@ function date_iso8601($date) {
 /**
  * Formats an attribute string for an HTTP header.
  *
- * @param $attributes
+ * @param array $attributes
  *   An associative array of attributes such as 'rel'.
  *
- * @return
+ * @return string
  *   A ; separated string ready for insertion in a HTTP header. No escaping is
  *   performed for HTML entities, so this string is not safe to be printed.
+ *
+ * @deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. Use
+ *   \Drupal\Core\Render\HtmlResponseAttachmentsProcessor::formatHttpHeaderAttributes()
+ *   instead.
+ *
+ * @see https://www.drupal.org/node/3000051
  */
 function drupal_http_header_attributes(array $attributes = []) {
-  foreach ($attributes as $attribute => &$data) {
-    if (is_array($data)) {
-      $data = implode(' ', $data);
-    }
-    $data = $attribute . '="' . $data . '"';
-  }
-  return $attributes ? ' ' . implode('; ', $attributes) : '';
+  @trigger_error("drupal_http_header_attributes() is deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. Use \Drupal\Core\Render\HtmlResponseAttachmentsProcessor::formatHttpHeaderAttributes() instead. See https://www.drupal.org/node/3000051", E_USER_DEPRECATED);
+  return HtmlResponseAttachmentsProcessor::formatHttpHeaderAttributes($attributes);
 }
 
 /**
@@ -395,22 +408,22 @@ function drupal_http_header_attributes(array $attributes = []) {
  *   indicates unlimited execution time.
  *
  * @ingroup php_wrappers
+ *
+ * @deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. Use
+ *   \Drupal\Core\Environment::setTimeLimit() instead.
+ *
+ * @see https://www.drupal.org/node/3000058
  */
 function drupal_set_time_limit($time_limit) {
-  if (function_exists('set_time_limit')) {
-    $current = ini_get('max_execution_time');
-    // Do not set time limit if it is currently unlimited.
-    if ($current != 0) {
-      @set_time_limit($time_limit);
-    }
-  }
+  @trigger_error('drupal_set_time_limit() is deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. Use \Drupal\Core\Environment::setTimeLimit() instead. See https://www.drupal.org/node/3000058.', E_USER_DEPRECATED);
+  Environment::setTimeLimit($time_limit);
 }
 
 /**
  * Returns the base URL path (i.e., directory) of the Drupal installation.
  *
- * base_path() adds a "/" to the beginning and end of the returned path if the
- * path is not empty. At the very least, this will return "/".
+ * Function base_path() adds a "/" to the beginning and end of the returned path
+ * if the path is not empty. At the very least, this will return "/".
  *
  * Examples:
  * - http://example.com returns "/" because the path is empty.
@@ -491,7 +504,7 @@ function drupal_js_defaults($data = NULL) {
  *
  * Every condition is a key/value pair, whose key is a jQuery selector that
  * denotes another element on the page, and whose value is an array of
- * conditions, which must bet met on that element:
+ * conditions, which must be met on that element:
  * @code
  * array(
  *   'visible' => array(
@@ -716,7 +729,7 @@ function drupal_attach_tabledrag(&$element, array $options) {
     'subgroup' => NULL,
     'source' => NULL,
     'hidden' => TRUE,
-    'limit' => 0
+    'limit' => 0,
   ];
 
   $group = $options['group'];
@@ -1117,7 +1130,7 @@ function drupal_flush_all_caches() {
   \Drupal::service('kernel')->invalidateContainer();
 
   // Wipe the Twig PHP Storage cache.
-  PhpStorageFactory::get('twig')->deleteAll();
+  \Drupal::service('twig')->invalidate();
 
   // Rebuild module and theme data.
   $module_data = system_rebuild_module_data();
@@ -1213,9 +1226,13 @@ function debug($data, $label = NULL, $print_r = TRUE) {
  *   NULL if compatible, otherwise the original dependency version string that
  *   caused the incompatibility.
  *
- * @see \Drupal\Core\Extension\ModuleHandler::parseDependency()
+ * @deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. Use
+ *   \Drupal\Core\Extension\Dependency::isCompatible() instead.
+ *
+ * @see https://www.drupal.org/node/2756875
  */
 function drupal_check_incompatibility($v, $current_version) {
+  @trigger_error(__FUNCTION__ . '() is deprecated. Use \Drupal\Core\Extension\Dependency::isCompatible() instead. See https://www.drupal.org/node/2756875', E_USER_DEPRECATED);
   if (!empty($v['versions'])) {
     foreach ($v['versions'] as $required_version) {
       if ((isset($required_version['op']) && !version_compare($current_version, $required_version['version'], $required_version['op']))) {

@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\tour\Functional;
 
+use Drupal\Core\Url;
 use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\tour\Entity\Tour;
 
@@ -45,7 +46,7 @@ class TourTest extends TourTestBasic {
 
     $this->drupalPlaceBlock('local_actions_block', [
       'theme' => 'seven',
-      'region' => 'content'
+      'region' => 'content',
     ]);
   }
 
@@ -66,7 +67,7 @@ class TourTest extends TourTestBasic {
     $elements = $this->xpath('//li[@data-id=:data_id and @class=:classes and ./p//a[@href=:href and contains(., :text)]]', [
       ':classes' => 'tip-module-tour-test tip-type-text tip-tour-test-1',
       ':data_id' => 'tour-test-1',
-      ':href' => \Drupal::url('<front>', [], ['absolute' => TRUE]),
+      ':href' => Url::fromRoute('<front>', [], ['absolute' => TRUE])->toString(),
       ':text' => 'Drupal',
     ]);
     $this->assertEqual(count($elements), 1, 'Found Token replacement.');
@@ -130,7 +131,7 @@ class TourTest extends TourTestBasic {
           'url' => 'http://local/image.png',
           'weight' => 1,
           'attributes' => [
-            'data-id' => 'tour-code-test-2'
+            'data-id' => 'tour-code-test-2',
           ],
         ],
       ],

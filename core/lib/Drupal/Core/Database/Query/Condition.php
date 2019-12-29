@@ -159,6 +159,13 @@ class Condition implements ConditionInterface, \Countable {
   /**
    * {@inheritdoc}
    */
+  public function alwaysFalse() {
+    return $this->where('1 = 0');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function &conditions() {
     return $this->conditions;
   }
@@ -375,7 +382,8 @@ class Condition implements ConditionInterface, \Countable {
     }
     else {
       // We need to upper case because PHP index matches are case sensitive but
-      // do not need the more expensive Unicode::strtoupper() because SQL statements are ASCII.
+      // do not need the more expensive mb_strtoupper() because SQL statements
+      // are ASCII.
       $operator = strtoupper($operator);
       $return = isset(static::$conditionOperatorMap[$operator]) ? static::$conditionOperatorMap[$operator] : [];
     }

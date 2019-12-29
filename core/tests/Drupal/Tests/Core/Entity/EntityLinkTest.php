@@ -58,6 +58,13 @@ class EntityLinkTest extends UnitTestCase {
    * @covers ::link
    *
    * @dataProvider providerTestLink
+   *
+   * @group legacy
+   *
+   * Note this is only a legacy test because it triggers a call to
+   * \Drupal\Core\Entity\EntityTypeInterface::getLabelCallback() which is mocked
+   * and triggers a deprecation error. Remove when ::getLabelCallback() is
+   * removed.
    */
   public function testLink($entity_label, $link_text, $expected_text, $link_rel = 'canonical', array $link_options = []) {
     $language = new Language(['id' => 'es']);
@@ -94,7 +101,7 @@ class EntityLinkTest extends UnitTestCase {
       ->will($this->returnValue($entity_type));
 
     /** @var \Drupal\Core\Entity\Entity $entity */
-    $entity = $this->getMockForAbstractClass('Drupal\Core\Entity\Entity', [
+    $entity = $this->getMockForAbstractClass('Drupal\Core\Entity\EntityBase', [
       ['id' => $entity_id, 'label' => $entity_label, 'langcode' => 'es'],
       $entity_type_id,
     ]);
@@ -111,7 +118,7 @@ class EntityLinkTest extends UnitTestCase {
       ->with($this->equalTo($expected_link))
       ->willReturn($expected);
 
-    $this->assertSame($expected, $entity->link($link_text, $link_rel, $link_options));
+    $this->assertSame($expected, $entity->toLink($link_text, $link_rel, $link_options)->toString());
   }
 
   /**
@@ -120,6 +127,13 @@ class EntityLinkTest extends UnitTestCase {
    * @covers ::toLink
    *
    * @dataProvider providerTestLink
+   *
+   * @group legacy
+   *
+   * Note this is only a legacy test because it triggers a call to
+   * \Drupal\Core\Entity\EntityTypeInterface::getLabelCallback() which is mocked
+   * and triggers a deprecation error. Remove when ::getLabelCallback() is
+   * removed.
    */
   public function testToLink($entity_label, $link_text, $expected_text, $link_rel = 'canonical', array $link_options = []) {
     $language = new Language(['id' => 'es']);
@@ -156,7 +170,7 @@ class EntityLinkTest extends UnitTestCase {
       ->will($this->returnValue($entity_type));
 
     /** @var \Drupal\Core\Entity\Entity $entity */
-    $entity = $this->getMockForAbstractClass('Drupal\Core\Entity\Entity', [
+    $entity = $this->getMockForAbstractClass('Drupal\Core\Entity\EntityBase', [
       ['id' => $entity_id, 'label' => $entity_label, 'langcode' => 'es'],
       $entity_type_id,
     ]);

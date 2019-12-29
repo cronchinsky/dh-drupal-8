@@ -9,8 +9,14 @@ use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 
 /**
+ * Test the revision system.
+ *
+ * This test uses the entity_test_revlog module, which intentionally omits the
+ * entity_metadata_keys fields. This causes deprecation errors.
+ *
  * @coversDefaultClass \Drupal\Core\Entity\RevisionableContentEntityBase
  * @group Entity
+ * @group legacy
  */
 class RevisionableContentEntityBaseTest extends EntityKernelTestBase {
 
@@ -29,6 +35,10 @@ class RevisionableContentEntityBaseTest extends EntityKernelTestBase {
 
   /**
    * Tests the correct functionality CRUD operations of entity revisions.
+   *
+   * @expectedDeprecation The revision_user revision metadata key is not set for entity type: entity_test_mul_revlog See: https://www.drupal.org/node/2831499
+   * @expectedDeprecation The revision_created revision metadata key is not set for entity type: entity_test_mul_revlog See: https://www.drupal.org/node/2831499
+   * @expectedDeprecation The revision_log_message revision metadata key is not set for entity type: entity_test_mul_revlog See: https://www.drupal.org/node/2831499
    */
   public function testRevisionableContentEntity() {
     $entity_type = 'entity_test_mul_revlog';
@@ -89,6 +99,10 @@ class RevisionableContentEntityBaseTest extends EntityKernelTestBase {
    * Tests the behavior of the "revision_default" flag.
    *
    * @covers \Drupal\Core\Entity\ContentEntityBase::wasDefaultRevision
+   *
+   * @expectedDeprecation The revision_user revision metadata key is not set for entity type: entity_test_mul_revlog See: https://www.drupal.org/node/2831499
+   * @expectedDeprecation The revision_created revision metadata key is not set for entity type: entity_test_mul_revlog See: https://www.drupal.org/node/2831499
+   * @expectedDeprecation The revision_log_message revision metadata key is not set for entity type: entity_test_mul_revlog See: https://www.drupal.org/node/2831499
    */
   public function testWasDefaultRevision() {
     $entity_type_id = 'entity_test_mul_revlog';
@@ -154,12 +168,12 @@ class RevisionableContentEntityBaseTest extends EntityKernelTestBase {
   }
 
   /**
-   * Asserts the ammount of items on entity related tables.
+   * Asserts the amount of items on entity related tables.
    *
    * @param int $count
    *   The number of items expected to be in revisions related tables.
    * @param \Drupal\Core\Entity\EntityTypeInterface $definition
-   *   The definition and metada of the entity being tested.
+   *   The definition and metadata of the entity being tested.
    */
   protected function assertItemsTableCount($count, EntityTypeInterface $definition) {
     $this->assertEqual(1, db_query('SELECT COUNT(*) FROM {' . $definition->getBaseTable() . '}')->fetchField());

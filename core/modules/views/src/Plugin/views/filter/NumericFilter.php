@@ -190,6 +190,7 @@ class NumericFilter extends FilterPluginBase {
 
     return $options;
   }
+
   /**
    * Provide a simple textfield for equality
    */
@@ -299,7 +300,7 @@ class NumericFilter extends FilterPluginBase {
         // Ensure there is something in the 'value'.
         $form['value'] = [
           '#type' => 'value',
-          '#value' => NULL
+          '#value' => NULL,
         ];
       }
     }
@@ -315,12 +316,24 @@ class NumericFilter extends FilterPluginBase {
     }
   }
 
+  /**
+   * Filters by operator between.
+   *
+   * @param object $field
+   *   The views field.
+   */
   protected function opBetween($field) {
-    if ($this->operator == 'between') {
-      $this->query->addWhere($this->options['group'], $field, [$this->value['min'], $this->value['max']], 'BETWEEN');
+    if (is_numeric($this->value['min']) && is_numeric($this->value['max'])) {
+      $operator = $this->operator == 'between' ? 'BETWEEN' : 'NOT BETWEEN';
+      $this->query->addWhere($this->options['group'], $field, [$this->value['min'], $this->value['max']], $operator);
     }
-    else {
-      $this->query->addWhere($this->options['group'], $field, [$this->value['min'], $this->value['max']], 'NOT BETWEEN');
+    elseif (is_numeric($this->value['min'])) {
+      $operator = $this->operator == 'between' ? '>=' : '<';
+      $this->query->addWhere($this->options['group'], $field, $this->value['min'], $operator);
+    }
+    elseif (is_numeric($this->value['max'])) {
+      $operator = $this->operator == 'between' ? '<=' : '>';
+      $this->query->addWhere($this->options['group'], $field, $this->value['max'], $operator);
     }
   }
 

@@ -10,7 +10,7 @@ use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Url;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
-use Drupal\system\Tests\Cache\PageCacheTagsTestBase;
+use Drupal\Tests\system\Functional\Cache\PageCacheTagsTestBase;
 use Drupal\user\Entity\Role;
 use Drupal\user\RoleInterface;
 
@@ -153,7 +153,7 @@ abstract class EntityCacheTagsTestBase extends PageCacheTagsTestBase {
    * @return string[]
    *   An array of the additional cache contexts.
    *
-   * @see \Drupal\system\Tests\Entity\EntityCacheTagsTestBase::createEntity()
+   * @see \Drupal\Tests\system\Functional\Entity\EntityCacheTagsTestBase::createEntity()
    */
   protected function getAdditionalCacheContextsForEntity(EntityInterface $entity) {
     return [];
@@ -167,7 +167,7 @@ abstract class EntityCacheTagsTestBase extends PageCacheTagsTestBase {
    * @return array
    *   An array of the additional cache tags.
    *
-   * @see \Drupal\system\Tests\Entity\EntityCacheTagsTestBase::createEntity()
+   * @see \Drupal\Tests\system\Functional\Entity\EntityCacheTagsTestBase::createEntity()
    */
   protected function getAdditionalCacheTagsForEntity(EntityInterface $entity) {
     return [];
@@ -324,8 +324,8 @@ abstract class EntityCacheTagsTestBase extends PageCacheTagsTestBase {
    */
   public function testReferencedEntity() {
     $entity_type = $this->entity->getEntityTypeId();
-    $referencing_entity_url = $this->referencingEntity->urlInfo('canonical');
-    $non_referencing_entity_url = $this->nonReferencingEntity->urlInfo('canonical');
+    $referencing_entity_url = $this->referencingEntity->toUrl('canonical');
+    $non_referencing_entity_url = $this->nonReferencingEntity->toUrl('canonical');
     $listing_url = Url::fromRoute('entity.entity_test.collection_referencing_entities', [
       'entity_reference_field_name' => $entity_type . '_reference',
       'referenced_entity_type' => $entity_type,

@@ -146,7 +146,7 @@ class BlockTest extends BlockTestBase {
       $block_name = 'system_powered_by_block';
       $add_url = Url::fromRoute('block.admin_add', [
         'plugin_id' => $block_name,
-        'theme' => $default_theme
+        'theme' => $default_theme,
       ]);
       $links = $this->xpath('//a[contains(@href, :href)]', [':href' => $add_url->toString()]);
       $this->assertEqual(1, count($links), 'Found one matching link.');
@@ -377,7 +377,7 @@ class BlockTest extends BlockTestBase {
     // both the page and block caches.
     $this->drupalGet('<front>');
     $this->assertEqual($this->drupalGetHeader('X-Drupal-Cache'), 'HIT');
-    $cid_parts = [\Drupal::url('<front>', [], ['absolute' => TRUE]), 'html'];
+    $cid_parts = [Url::fromRoute('<front>', [], ['absolute' => TRUE])->toString(), ''];
     $cid = implode(':', $cid_parts);
     $cache_entry = \Drupal::cache('page')->get($cid);
     $expected_cache_tags = [
@@ -418,7 +418,7 @@ class BlockTest extends BlockTestBase {
     // Verify a cache hit, but also the presence of the correct cache tags.
     $this->drupalGet('<front>');
     $this->assertEqual($this->drupalGetHeader('X-Drupal-Cache'), 'HIT');
-    $cid_parts = [\Drupal::url('<front>', [], ['absolute' => TRUE]), 'html'];
+    $cid_parts = [Url::fromRoute('<front>', [], ['absolute' => TRUE])->toString(), ''];
     $cid = implode(':', $cid_parts);
     $cache_entry = \Drupal::cache('page')->get($cid);
     $expected_cache_tags = [
@@ -537,14 +537,14 @@ class BlockTest extends BlockTestBase {
 
     $this->assertEqual($block->getVisibility()['user_role']['roles'], [
       $role1->id() => $role1->id(),
-      $role2->id() => $role2->id()
+      $role2->id() => $role2->id(),
     ]);
 
     $role1->delete();
 
     $block = Block::load($block->id());
     $this->assertEqual($block->getVisibility()['user_role']['roles'], [
-      $role2->id() => $role2->id()
+      $role2->id() => $role2->id(),
     ]);
   }
 

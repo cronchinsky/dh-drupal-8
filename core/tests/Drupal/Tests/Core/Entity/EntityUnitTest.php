@@ -123,7 +123,7 @@ class EntityUnitTest extends UnitTestCase {
     $container->set('cache_tags.invalidator', $this->cacheTagsInvalidator);
     \Drupal::setContainer($container);
 
-    $this->entity = $this->getMockForAbstractClass('\Drupal\Core\Entity\Entity', [$this->values, $this->entityTypeId]);
+    $this->entity = $this->getMockForAbstractClass('\Drupal\Core\Entity\EntityBase', [$this->values, $this->entityTypeId]);
   }
 
   /**
@@ -168,6 +168,7 @@ class EntityUnitTest extends UnitTestCase {
 
   /**
    * @covers ::label
+   * @group legacy
    */
   public function testLabel() {
     // Make a mock with one method that we use as the entity's uri_callback. We

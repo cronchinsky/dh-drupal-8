@@ -2,7 +2,8 @@
 
 namespace Drupal\Tests\book\Functional;
 
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Core\Url;
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Entity\EntityInterface;
 
 /**
@@ -102,32 +103,32 @@ trait BookTestTrait {
     // Check previous, up, and next links.
     if ($previous) {
       /** @var \Drupal\Core\Url $url */
-      $url = $previous->urlInfo();
+      $url = $previous->toUrl();
       $url->setOptions(['attributes' => ['rel' => ['prev'], 'title' => t('Go to previous page')]]);
-      $text = SafeMarkup::format('<b>‹</b> @label', ['@label' => $previous->label()]);
+      $text = new FormattableMarkup('<b>‹</b> @label', ['@label' => $previous->label()]);
       $this->assertRaw(\Drupal::l($text, $url), 'Previous page link found.');
     }
 
     if ($up) {
       /** @var \Drupal\Core\Url $url */
-      $url = $up->urlInfo();
+      $url = $up->toUrl();
       $url->setOptions(['attributes' => ['title' => t('Go to parent page')]]);
       $this->assertRaw(\Drupal::l('Up', $url), 'Up page link found.');
     }
 
     if ($next) {
       /** @var \Drupal\Core\Url $url */
-      $url = $next->urlInfo();
+      $url = $next->toUrl();
       $url->setOptions(['attributes' => ['rel' => ['next'], 'title' => t('Go to next page')]]);
-      $text = SafeMarkup::format('@label <b>›</b>', ['@label' => $next->label()]);
+      $text = new FormattableMarkup('@label <b>›</b>', ['@label' => $next->label()]);
       $this->assertRaw(\Drupal::l($text, $url), 'Next page link found.');
     }
 
     // Compute the expected breadcrumb.
     $expected_breadcrumb = [];
-    $expected_breadcrumb[] = \Drupal::url('<front>');
+    $expected_breadcrumb[] = Url::fromRoute('<front>')->toString();
     foreach ($breadcrumb as $a_node) {
-      $expected_breadcrumb[] = $a_node->url();
+      $expected_breadcrumb[] = $a_node->toUrl()->toString();
     }
 
     // Fetch links in the current breadcrumb.

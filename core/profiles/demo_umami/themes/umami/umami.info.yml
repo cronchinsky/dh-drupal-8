@@ -7,12 +7,18 @@ core: 8.x
 libraries:
   - umami/global
   - umami/messages
-  - umami/webfonts
+  - umami/webfonts-open-sans
+  - umami/webfonts-scope-one
 
 libraries-override:
   classy/messages: false
 
+libraries-extend:
+  tour/tour-styling:
+    - umami/demo-umami-tour
+
 regions:
+  pre_header: Pre-header
   header: Header
   highlighted: Highlighted
   tabs: Tabs
@@ -21,6 +27,7 @@ regions:
   page_title: 'Page Title'
   content: Content
   sidebar: Sidebar
+  content_bottom: 'Content Bottom'
   footer: Footer
   bottom: Bottom
   page_top: 'Page top' # Needed by Drupal Core

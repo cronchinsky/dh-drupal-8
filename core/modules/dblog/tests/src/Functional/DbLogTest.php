@@ -4,11 +4,11 @@ namespace Drupal\Tests\dblog\Functional;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Database\Database;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\Core\Url;
 use Drupal\dblog\Controller\DbLogController;
 use Drupal\Tests\BrowserTestBase;
-use Drupal\Tests\Traits\Core\CronRunTrait;
 
 /**
  * Generate events and verify dblog entries; verify user access to log reports
@@ -17,7 +17,7 @@ use Drupal\Tests\Traits\Core\CronRunTrait;
  * @group dblog
  */
 class DbLogTest extends BrowserTestBase {
-  use CronRunTrait;
+  use FakeLogEntries;
 
   /**
    * Modules to enable.
@@ -66,7 +66,6 @@ class DbLogTest extends BrowserTestBase {
 
     $row_limit = 100;
     $this->verifyRowLimit($row_limit);
-    $this->verifyCron($row_limit);
     $this->verifyEvents();
     $this->verifyReports();
     $this->verifyBreadcrumbs();
@@ -114,8 +113,56 @@ class DbLogTest extends BrowserTestBase {
     // Verify hostname.
     $this->assertRaw($context['ip'], 'Found hostname on the detail page.');
 
+    // Verify location.
+    $this->assertRaw($context['request_uri'], 'Found location on the detail page.');
+
     // Verify severity.
     $this->assertText('Notice', 'The severity was properly displayed on the detail page.');
+  }
+
+  /**
+   * Test individual log event page with missing log attributes.
+   *
+   * In some cases few log attributes are missing. For example:
+   * - Missing referer: When request is made to a specific url directly and
+   *   error occurred. In this case there is no referer.
+   * - Incorrect location: When location attribute is incorrect uri which can
+   *   not be used to generate a valid link.
+   */
+  public function testLogEventPageWithMissingInfo() {
+    $this->drupalLogin($this->adminUser);
+    $connection = Database::getConnection();
+
+    // Test log event page with missing referer.
+    $this->generateLogEntries(1, [
+      'referer' => NULL,
+    ]);
+    $wid = $connection->query('SELECT MAX(wid) FROM {watchdog}')->fetchField();
+    $this->drupalGet('admin/reports/dblog/event/' . $wid);
+
+    // Verify table headers are present, even though the referrer is missing.
+    $this->assertText('Referrer', 'Referrer header is present on the detail page.');
+
+    // Verify severity.
+    $this->assertText('Notice', 'The severity is properly displayed on the detail page.');
+
+    // Test log event page with incorrect location.
+    $request_uri = '/some/incorrect/url';
+    $this->generateLogEntries(1, [
+      'request_uri' => $request_uri,
+    ]);
+    $wid = $connection->query('SELECT MAX(wid) FROM {watchdog}')->fetchField();
+    $this->drupalGet('admin/reports/dblog/event/' . $wid);
+
+    // Verify table headers are present.
+    $this->assertText('Location', 'Location header is present on the detail page.');
+
+    // Verify severity.
+    $this->assertText('Notice', 'The severity is properly displayed on the detail page.');
+
+    // Verify location is available as plain text.
+    $this->assertEquals($request_uri, $this->cssSelect('table.dblog-event > tbody > tr:nth-child(4) > td')[0]->getHtml());
+    $this->assertNoLink($request_uri);
   }
 
   /**
@@ -134,101 +181,6 @@ class DbLogTest extends BrowserTestBase {
     // Check row limit variable.
     $current_limit = $this->config('dblog.settings')->get('row_limit');
     $this->assertTrue($current_limit == $row_limit, format_string('[Cache] Row limit variable of @count equals row limit of @limit', ['@count' => $current_limit, '@limit' => $row_limit]));
-  }
-
-  /**
-   * Verifies that cron correctly applies the database log row limit.
-   *
-   * @param int $row_limit
-   *   The row limit.
-   */
-  private function verifyCron($row_limit) {
-    // Generate additional log entries.
-    $this->generateLogEntries($row_limit + 10);
-    // Verify that the database log row count exceeds the row limit.
-    $count = db_query('SELECT COUNT(wid) FROM {watchdog}')->fetchField();
-    $this->assertTrue($count > $row_limit, format_string('Dblog row count of @count exceeds row limit of @limit', ['@count' => $count, '@limit' => $row_limit]));
-
-    // Get the number of enabled modules. Cron adds a log entry for each module.
-    $list = \Drupal::moduleHandler()->getImplementations('cron');
-    $module_count = count($list);
-    $cron_detailed_count = $this->runCron();
-    $this->assertTrue($cron_detailed_count == $module_count + 2, format_string('Cron added @count of @expected new log entries', ['@count' => $cron_detailed_count, '@expected' => $module_count + 2]));
-
-    // Test disabling of detailed cron logging.
-    $this->config('system.cron')->set('logging', 0)->save();
-    $cron_count = $this->runCron();
-    $this->assertTrue($cron_count = 1, format_string('Cron added @count of @expected new log entries', ['@count' => $cron_count, '@expected' => 1]));
-  }
-
-  /**
-   * Runs cron and returns number of new log entries.
-   *
-   * @return int
-   *   Number of new watchdog entries.
-   */
-  private function runCron() {
-    // Get last ID to compare against; log entries get deleted, so we can't
-    // reliably add the number of newly created log entries to the current count
-    // to measure number of log entries created by cron.
-    $last_id = db_query('SELECT MAX(wid) FROM {watchdog}')->fetchField();
-
-    // Run a cron job.
-    $this->cronRun();
-
-    // Get last ID after cron was run.
-    $current_id = db_query('SELECT MAX(wid) FROM {watchdog}')->fetchField();
-
-    return $current_id - $last_id;
-  }
-
-  /**
-   * Generates a number of random database log events.
-   *
-   * @param int $count
-   *   Number of watchdog entries to generate.
-   * @param array $options
-   *   These options are used to override the defaults for the test.
-   *   An associative array containing any of the following keys:
-   *   - 'channel': String identifying the log channel to be output to.
-   *     If the channel is not set, the default of 'custom' will be used.
-   *   - 'message': String containing a message to be output to the log.
-   *     A simple default message is used if not provided.
-   *   - 'variables': Array of variables that match the message string.
-   *   - 'severity': Log severity level as defined in logging_severity_levels.
-   *   - 'link': String linking to view the result of the event.
-   *   - 'user': String identifying the username.
-   *   - 'uid': Int identifying the user id for the user.
-   *   - 'request_uri': String identifying the location of the request.
-   *   - 'referer': String identifying the referring url.
-   *   - 'ip': String The ip address of the client machine triggering the log
-   *     entry.
-   *   - 'timestamp': Int unix timestamp.
-   */
-  private function generateLogEntries($count, $options = []) {
-    global $base_root;
-
-    // Prepare the fields to be logged
-    $log = $options + [
-      'channel'     => 'custom',
-      'message'     => 'Dblog test log message',
-      'variables'   => [],
-      'severity'    => RfcLogLevel::NOTICE,
-      'link'        => NULL,
-      'user'        => $this->adminUser,
-      'uid'         => $this->adminUser->id(),
-      'request_uri' => $base_root . \Drupal::request()->getRequestUri(),
-      'referer'     => \Drupal::request()->server->get('HTTP_REFERER'),
-      'ip'          => '127.0.0.1',
-      'timestamp'   => REQUEST_TIME,
-    ];
-
-    $logger = $this->container->get('logger.dblog');
-    $message = $log['message'] . ' Entry #';
-    for ($i = 0; $i < $count; $i++) {
-      $log['message'] = $message . $i;
-      $logger->log($log['severity'], $log['message'], $log);
-    }
   }
 
   /**
@@ -361,7 +313,7 @@ class DbLogTest extends BrowserTestBase {
       'link' => $link,
     ]);
 
-    $result = db_query_range('SELECT wid FROM {watchdog} ORDER BY wid DESC', 0, 1);
+    $result = Database::getConnection()->queryRange('SELECT wid FROM {watchdog} ORDER BY wid DESC', 0, 1);
     $this->drupalGet('admin/reports/dblog/event/' . $result->fetchField());
 
     // Check if the link exists (unescaped).
@@ -400,7 +352,7 @@ class DbLogTest extends BrowserTestBase {
       $ids[] = $row->wid;
     }
     $count_before = (isset($ids)) ? count($ids) : 0;
-    $this->assertTrue($count_before > 0, format_string('DBLog contains @count records for @name', ['@count' => $count_before, '@name' => $user->getUsername()]));
+    $this->assertTrue($count_before > 0, format_string('DBLog contains @count records for @name', ['@count' => $count_before, '@name' => $user->getAccountName()]));
 
     // Log in the admin user.
     $this->drupalLogin($this->adminUser);
@@ -432,7 +384,7 @@ class DbLogTest extends BrowserTestBase {
       $value = $links->getAttribute('href');
 
       // Extract link to details page.
-      $link = Unicode::substr($value, strpos($value, 'admin/reports/dblog/event/'));
+      $link = mb_substr($value, strpos($value, 'admin/reports/dblog/event/'));
       $this->drupalGet($link);
       // Check for full message text on the details page.
       $this->assertRaw($message, 'DBLog event details was found: [delete user]');
@@ -573,7 +525,6 @@ class DbLogTest extends BrowserTestBase {
       'variables'   => [],
       'severity'    => RfcLogLevel::NOTICE,
       'link'        => NULL,
-      'user'        => $this->adminUser,
       'uid'         => $this->adminUser->id(),
       'request_uri' => $base_root . \Drupal::request()->getRequestUri(),
       'referer'     => \Drupal::request()->server->get('HTTP_REFERER'),
@@ -602,7 +553,7 @@ class DbLogTest extends BrowserTestBase {
     $this->drupalLogin($this->adminUser);
 
     // Clear the log to ensure that only generated entries will be found.
-    db_delete('watchdog')->execute();
+    Database::getConnection()->delete('watchdog')->execute();
 
     // Generate 9 random watchdog entries.
     $type_names = [];

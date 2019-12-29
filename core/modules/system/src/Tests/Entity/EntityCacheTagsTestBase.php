@@ -14,11 +14,15 @@ use Drupal\system\Tests\Cache\PageCacheTagsTestBase;
 use Drupal\user\Entity\Role;
 use Drupal\user\RoleInterface;
 
+@trigger_error(__NAMESPACE__ . '\EntityCacheTagsTestBase is deprecated in Drupal 8.6.x and will be removed before Drupal 9.0.0. Instead, use \Drupal\Tests\system\Functional\Entity\EntityCacheTagsTestBase. See https://www.drupal.org/node/2946549.', E_USER_DEPRECATED);
+
 /**
  * Provides helper methods for Entity cache tags tests.
  *
  * @deprecated Scheduled for removal in Drupal 9.0.0.
  *   Use \Drupal\Tests\system\Functional\Entity\EntityCacheTagsTestBase instead.
+ *
+ * @see https://www.drupal.org/node/2946549
  */
 abstract class EntityCacheTagsTestBase extends PageCacheTagsTestBase {
 
@@ -327,8 +331,8 @@ abstract class EntityCacheTagsTestBase extends PageCacheTagsTestBase {
    */
   public function testReferencedEntity() {
     $entity_type = $this->entity->getEntityTypeId();
-    $referencing_entity_url = $this->referencingEntity->urlInfo('canonical');
-    $non_referencing_entity_url = $this->nonReferencingEntity->urlInfo('canonical');
+    $referencing_entity_url = $this->referencingEntity->toUrl('canonical');
+    $non_referencing_entity_url = $this->nonReferencingEntity->toUrl('canonical');
     $listing_url = Url::fromRoute('entity.entity_test.collection_referencing_entities', [
       'entity_reference_field_name' => $entity_type . '_reference',
       'referenced_entity_type' => $entity_type,

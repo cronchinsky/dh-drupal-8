@@ -23,7 +23,6 @@ class WizardTest extends WizardTestBase {
    */
   public static $modules = ['node', 'comment'];
 
-
   /**
    * {@inheritdoc}
    */
@@ -61,7 +60,7 @@ class WizardTest extends WizardTestBase {
     $fields = $this->xpath($xpath);
     $options = [];
     foreach ($fields as $field) {
-      $items = $this->getAllOptions($field);
+      $items = $field->findAll('xpath', 'option');
       foreach ($items as $item) {
         $options[] = $item->getValue();
       }

@@ -4,6 +4,7 @@ namespace Drupal\rest\Plugin\rest\resource;
 
 use Drupal\Component\Plugin\DependentPluginInterface;
 use Drupal\Component\Plugin\PluginManagerInterface;
+use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\Cache\CacheableResponseInterface;
 use Drupal\Core\Config\Entity\ConfigEntityType;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -120,8 +121,7 @@ class EntityResource extends ResourceBase implements DependentPluginInterface {
    *
    * @throws \Symfony\Component\HttpKernel\Exception\HttpException
    */
-  public function get(EntityInterface $entity) {
-    $request = \Drupal::request();
+  public function get(EntityInterface $entity, Request $request) {
     $response = new ResourceResponse($entity, 200);
     // @todo Either remove the line below or remove this todo in https://www.drupal.org/project/drupal/issues/2973356
     $response->addCacheableDependency($request->attributes->get(AccessAwareRouterInterface::ACCESS_RESULT));
@@ -189,7 +189,7 @@ class EntityResource extends ResourceBase implements DependentPluginInterface {
       // metadata here.
       $headers = [];
       if (in_array('canonical', $entity->uriRelationships(), TRUE)) {
-        $url = $entity->urlInfo('canonical', ['absolute' => TRUE])->toString(TRUE);
+        $url = $entity->toUrl('canonical', ['absolute' => TRUE])->toString(TRUE);
         $headers['Location'] = $url->getGeneratedUrl();
       }
       return new ModifiedResourceResponse($entity, 201, $headers);
@@ -222,6 +222,8 @@ class EntityResource extends ResourceBase implements DependentPluginInterface {
     }
 
     // Overwrite the received fields.
+    // @todo Remove $changed_fields in https://www.drupal.org/project/drupal/issues/2862574.
+    $changed_fields = [];
     foreach ($entity->_restSubmittedFields as $field_name) {
       $field = $entity->get($field_name);
       // It is not possible to set the language to NULL as it is automatically
@@ -231,12 +233,18 @@ class EntityResource extends ResourceBase implements DependentPluginInterface {
         continue;
       }
       if ($this->checkPatchFieldAccess($original_entity->get($field_name), $field)) {
+        $changed_fields[] = $field_name;
         $original_entity->set($field_name, $field->getValue());
       }
     }
 
+    // If no fields are changed, we can send a response immediately!
+    if (empty($changed_fields)) {
+      return new ModifiedResourceResponse($original_entity, 200);
+    }
+
     // Validate the received data before saving.
-    $this->validate($original_entity);
+    $this->validate($original_entity, $changed_fields);
     try {
       $original_entity->save();
       $this->logger->notice('Updated entity %type with ID %id.', ['%type' => $original_entity->getEntityTypeId(), '%id' => $original_entity->id()]);
@@ -268,12 +276,6 @@ class EntityResource extends ResourceBase implements DependentPluginInterface {
    * @internal
    */
   protected function checkPatchFieldAccess(FieldItemListInterface $original_field, FieldItemListInterface $received_field) {
-    // If the user is allowed to edit the field, it is always safe to set the
-    // received value. We may be setting an unchanged value, but that is ok.
-    if ($original_field->access('edit')) {
-      return TRUE;
-    }
-
     // The user might not have access to edit the field, but still needs to
     // submit the current field value as part of the PATCH request. For
     // example, the entity keys required by denormalizers. Therefore, if the
@@ -286,10 +288,24 @@ class EntityResource extends ResourceBase implements DependentPluginInterface {
       return FALSE;
     }
 
+    // If the user is allowed to edit the field, it is always safe to set the
+    // received value. We may be setting an unchanged value, but that is ok.
+    $field_edit_access = $original_field->access('edit', NULL, TRUE);
+    if ($field_edit_access->isAllowed()) {
+      return TRUE;
+    }
+
     // It's helpful and safe to let the user know when they are not allowed to
     // update a field.
     $field_name = $received_field->getName();
-    throw new AccessDeniedHttpException("Access denied on updating field '$field_name'.");
+    $error_message = "Access denied on updating field '$field_name'.";
+    if ($field_edit_access instanceof AccessResultReasonInterface) {
+      $reason = $field_edit_access->getReason();
+      if ($reason) {
+        $error_message .= ' ' . $reason;
+      }
+    }
+    throw new AccessDeniedHttpException($error_message);
   }
 
   /**

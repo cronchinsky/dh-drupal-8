@@ -54,7 +54,7 @@ class Tasks extends InstallTasks {
   protected function connect() {
     try {
       // This doesn't actually test the connection.
-      db_set_active();
+      Database::setActiveConnection();
       // Now actually do a check.
       Database::getConnection();
       $this->pass('Drupal can CONNECT to the database ok.');
@@ -68,7 +68,7 @@ class Tasks extends InstallTasks {
 
         // We cannot use file_directory_temp() here because we haven't yet
         // successfully connected to the database.
-        $connection_info['default']['database'] = drupal_tempnam(sys_get_temp_dir(), 'sqlite');
+        $connection_info['default']['database'] = \Drupal::service('file_system')->tempnam(sys_get_temp_dir(), 'sqlite');
 
         // In order to change the Database::$databaseInfo array, need to remove
         // the active connection, then re-add it with the new info.

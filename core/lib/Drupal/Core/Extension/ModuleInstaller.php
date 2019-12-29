@@ -14,6 +14,11 @@ use Drupal\Core\Serialization\Yaml;
  *
  * It registers the module in config, installs its own configuration,
  * installs the schema, updates the Drupal kernel and more.
+ *
+ * We don't inject dependencies yet, as we would need to reload them after
+ * each installation or uninstallation of a module.
+ * https://www.drupal.org/project/drupal/issues/2350111 for example tries to
+ * solve this dilemma.
  */
 class ModuleInstaller implements ModuleInstallerInterface {
 
@@ -76,9 +81,14 @@ class ModuleInstaller implements ModuleInstallerInterface {
    */
   public function install(array $module_list, $enable_dependencies = TRUE) {
     $extension_config = \Drupal::configFactory()->getEditable('core.extension');
+    // Get all module data so we can find dependencies and sort.
+    $module_data = system_rebuild_module_data();
+    foreach ($module_list as $module) {
+      if (!empty($module_data[$module]->info['core_incompatible'])) {
+        throw new MissingDependencyException("Unable to install modules: module '$module' is incompatible with this version of Drupal core.");
+      }
+    }
     if ($enable_dependencies) {
-      // Get all module data so we can find dependencies and sort.
-      $module_data = system_rebuild_module_data();
       $module_list = $module_list ? array_combine($module_list, $module_list) : [];
       if ($missing_modules = array_diff_key($module_list, $module_data)) {
         // One or more of the given modules doesn't exist.
@@ -103,6 +113,9 @@ class ModuleInstaller implements ModuleInstallerInterface {
 
           // Skip already installed modules.
           if (!isset($module_list[$dependency]) && !isset($installed_modules[$dependency])) {
+            if ($module_data[$dependency]->info['core_incompatible']) {
+              throw new MissingDependencyException("Unable to install modules: module '$module'. Its dependency module '$dependency' is incompatible with this version of Drupal core.");
+            }
             $module_list[$dependency] = $dependency;
           }
         }
@@ -170,7 +183,7 @@ class ModuleInstaller implements ModuleInstallerInterface {
             $module_filenames[$name] = $current_module_filenames[$name];
           }
           else {
-            $module_path = drupal_get_path('module', $name);
+            $module_path = \Drupal::service('extension.list.module')->getPath($name);
             $pathname = "$module_path/$name.info.yml";
             $filename = file_exists($module_path . "/$name.module") ? "$name.module" : NULL;
             $module_filenames[$name] = new Extension($this->root, 'module', $pathname, $filename);
@@ -186,10 +199,10 @@ class ModuleInstaller implements ModuleInstallerInterface {
         $this->moduleHandler->load($module);
         module_load_install($module);
 
-        // Clear the static cache of system_rebuild_module_data() to pick up the
-        // new module, since it merges the installation status of modules into
-        // its statically cached list.
-        drupal_static_reset('system_rebuild_module_data');
+        // Clear the static cache of the "extension.list.module" service to pick
+        // up the new module, since it merges the installation status of modules
+        // into its statically cached list.
+        \Drupal::service('extension.list.module')->reset();
 
         // Update the kernel to include it.
         $this->updateKernel($module_filenames);
@@ -345,7 +358,6 @@ class ModuleInstaller implements ModuleInstallerInterface {
     if ($uninstall_dependents) {
       // Add dependent modules to the list. The new modules will be processed as
       // the foreach loop continues.
-      $profile = drupal_get_profile();
       foreach ($module_list as $module => $value) {
         foreach (array_keys($module_data[$module]->required_by) as $dependent) {
           if (!isset($module_data[$dependent])) {
@@ -354,7 +366,7 @@ class ModuleInstaller implements ModuleInstallerInterface {
           }
 
           // Skip already uninstalled modules.
-          if (isset($installed_modules[$dependent]) && !isset($module_list[$dependent]) && $dependent != $profile) {
+          if (isset($installed_modules[$dependent]) && !isset($module_list[$dependent])) {
             $module_list[$dependent] = $dependent;
           }
         }
@@ -387,10 +399,11 @@ class ModuleInstaller implements ModuleInstallerInterface {
       // provided by the module that is being uninstalled.
       // @todo Clean this up in https://www.drupal.org/node/2350111.
       $entity_manager = \Drupal::entityManager();
+      $entity_type_bundle_info = \Drupal::service('entity_type.bundle.info');
       foreach ($entity_manager->getDefinitions() as $entity_type_id => $entity_type) {
         if ($entity_type->getProvider() == $module) {
-          foreach (array_keys($entity_manager->getBundleInfo($entity_type_id)) as $bundle) {
-            $entity_manager->onBundleDelete($bundle, $entity_type_id);
+          foreach (array_keys($entity_type_bundle_info->getBundleInfo($entity_type_id)) as $bundle) {
+            \Drupal::service('entity_bundle.listener')->onBundleDelete($bundle, $entity_type_id);
           }
         }
       }
@@ -447,10 +460,10 @@ class ModuleInstaller implements ModuleInstallerInterface {
       // Remove any potential cache bins provided by the module.
       $this->removeCacheBins($module);
 
-      // Clear the static cache of system_rebuild_module_data() to pick up the
-      // new module, since it merges the installation status of modules into
-      // its statically cached list.
-      drupal_static_reset('system_rebuild_module_data');
+      // Clear the static cache of the "extension.list.module" service to pick
+      // up the new module, since it merges the installation status of modules
+      // into its statically cached list.
+      \Drupal::service('extension.list.module')->reset();
 
       // Clear plugin manager caches.
       \Drupal::getContainer()->get('plugin.cache_clearer')->clearCachedDefinitions();

@@ -18,6 +18,8 @@ class MigrateNodeCounterTest extends MigrateDrupal7TestBase {
     'content_translation',
     'language',
     'menu_ui',
+    // Required for translation migrations.
+    'migrate_drupal_multilingual',
     'node',
     'statistics',
     'text',
@@ -29,16 +31,13 @@ class MigrateNodeCounterTest extends MigrateDrupal7TestBase {
   protected function setUp() {
     parent::setUp();
 
-    $this->installEntitySchema('node');
-    $this->installConfig('node');
     $this->installSchema('node', ['node_access']);
     $this->installSchema('statistics', ['node_counter']);
 
+    $this->migrateUsers(FALSE);
+    $this->migrateContentTypes();
     $this->executeMigrations([
       'language',
-      'd7_user_role',
-      'd7_user',
-      'd7_node_type',
       'd7_language_content_settings',
       'd7_node',
       'd7_node_translation',

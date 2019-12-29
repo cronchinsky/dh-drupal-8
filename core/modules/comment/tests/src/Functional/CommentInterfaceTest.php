@@ -2,10 +2,10 @@
 
 namespace Drupal\Tests\comment\Functional;
 
+use Drupal\Core\Url;
 use Drupal\comment\CommentManagerInterface;
 use Drupal\comment\Plugin\Field\FieldType\CommentItemInterface;
 use Drupal\comment\Entity\Comment;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Drupal\Core\Entity\Entity\EntityViewMode;
 use Drupal\user\RoleInterface;
@@ -26,8 +26,8 @@ class CommentInterfaceTest extends CommentTestBase {
     $this->drupalLogin($this->adminUser);
     // Make sure that comment field title is not displayed when there's no
     // comments posted.
-    $this->drupalGet($this->node->urlInfo());
-    $this->assertNoPattern('@<h2[^>]*>Comments</h2>@', 'Comments title is not displayed.');
+    $this->drupalGet($this->node->toUrl());
+    $this->assertSession()->responseNotMatches('@<h2[^>]*>Comments</h2>@', 'Comments title is not displayed.');
 
     // Set comments to have subject and preview disabled.
     $this->setCommentPreview(DRUPAL_DISABLED);
@@ -49,7 +49,7 @@ class CommentInterfaceTest extends CommentTestBase {
     $this->assertTrue($this->commentExists($comment), 'Comment found.');
 
     // Test the comment field title is displayed when there's comments.
-    $this->drupalGet($this->node->urlInfo());
+    $this->drupalGet($this->node->toUrl());
     $this->assertPattern('@<h2[^>]*>Comments</h2>@', 'Comments title is displayed.');
 
     // Set comments to have subject and preview to required.
@@ -109,8 +109,8 @@ class CommentInterfaceTest extends CommentTestBase {
 
     // Test changing the comment author to a verified user.
     $this->drupalGet('comment/' . $comment->id() . '/edit');
-    $comment = $this->postComment(NULL, $comment->comment_body->value, $comment->getSubject(), ['uid' => $this->webUser->getUsername() . ' (' . $this->webUser->id() . ')']);
-    $this->assertTrue($comment->getAuthorName() == $this->webUser->getUsername() && $comment->getOwnerId() == $this->webUser->id(), 'Comment author successfully changed to a registered user.');
+    $comment = $this->postComment(NULL, $comment->comment_body->value, $comment->getSubject(), ['uid' => $this->webUser->getAccountName() . ' (' . $this->webUser->id() . ')']);
+    $this->assertTrue($comment->getAuthorName() == $this->webUser->getAccountName() && $comment->getOwnerId() == $this->webUser->id(), 'Comment author successfully changed to a registered user.');
 
     $this->drupalLogout();
 
@@ -121,7 +121,7 @@ class CommentInterfaceTest extends CommentTestBase {
     // \Drupal\comment\Controller\CommentController::redirectNode().
     $this->drupalGet('comment/' . $this->node->id() . '/reply');
     // Verify we were correctly redirected.
-    $this->assertUrl(\Drupal::url('comment.reply', ['entity_type' => 'node', 'entity' => $this->node->id(), 'field_name' => 'comment'], ['absolute' => TRUE]));
+    $this->assertUrl(Url::fromRoute('comment.reply', ['entity_type' => 'node', 'entity' => $this->node->id(), 'field_name' => 'comment'], ['absolute' => TRUE])->toString());
     $this->drupalGet('comment/reply/node/' . $this->node->id() . '/comment/' . $comment->id());
     $this->assertText($subject_text, 'Individual comment-reply subject found.');
     $this->assertText($comment_text, 'Individual comment-reply body found.');
@@ -166,7 +166,7 @@ class CommentInterfaceTest extends CommentTestBase {
     $this->setCommentsPerPage(50);
 
     // Attempt to reply to an unpublished comment.
-    $reply_loaded->setPublished(FALSE);
+    $reply_loaded->setUnpublished();
     $reply_loaded->save();
     $this->drupalGet('comment/reply/node/' . $this->node->id() . '/comment/' . $reply_loaded->id());
     $this->assertResponse(403);
@@ -311,7 +311,7 @@ class CommentInterfaceTest extends CommentTestBase {
     $this->assertRaw('<p>' . $comment_text . '</p>');
 
     // Create a new comment entity view mode.
-    $mode = Unicode::strtolower($this->randomMachineName());
+    $mode = mb_strtolower($this->randomMachineName());
     EntityViewMode::create([
       'targetEntityType' => 'comment',
       'id' => "comment.$mode",

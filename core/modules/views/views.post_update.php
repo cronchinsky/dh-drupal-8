@@ -5,6 +5,7 @@
  * Post update functions for Views.
  */
 
+use Drupal\Core\Config\Entity\ConfigEntityUpdater;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\views\Entity\View;
 use Drupal\views\Plugin\views\filter\NumericFilter;
@@ -354,23 +355,42 @@ function views_post_update_views_data_table_dependencies(&$sandbox = NULL) {
  * Fix cache max age for table displays.
  */
 function views_post_update_table_display_cache_max_age(&$sandbox = NULL) {
-  $storage = \Drupal::entityTypeManager()->getStorage('view');
-  if (!isset($sandbox['views'])) {
-    $sandbox['views'] = $storage->getQuery()->accessCheck(FALSE)->execute();
-    $sandbox['count'] = count($sandbox['views']);
-  }
-
-  for ($i = 0; $i < 10 && count($sandbox['views']); $i++) {
-    $view_id = array_shift($sandbox['views']);
-    if ($view = $storage->load($view_id)) {
-      $displays = $view->get('display');
-      foreach ($displays as $display_name => &$display) {
-        if (isset($display['display_options']['style']['type']) && $display['display_options']['style']['type'] === 'table') {
-          $view->save();
-        }
+  \Drupal::classResolver(ConfigEntityUpdater::class)->update($sandbox, 'view', function ($view) {
+    /** @var \Drupal\views\ViewEntityInterface $view */
+    $displays = $view->get('display');
+    foreach ($displays as $display_name => &$display) {
+      if (isset($display['display_options']['style']['type']) && $display['display_options']['style']['type'] === 'table') {
+        return TRUE;
       }
     }
+    return FALSE;
+  });
+}
+
+/**
+ * Update exposed filter blocks label display to be disabled.
+ */
+function views_post_update_exposed_filter_blocks_label_display(&$sandbox = NULL) {
+  // If Block is not installed, there's nothing to do.
+  if (!\Drupal::moduleHandler()->moduleExists('block')) {
+    return;
   }
 
-  $sandbox['#finished'] = empty($sandbox['views']) ? 1 : ($sandbox['count'] - count($sandbox['views'])) / $sandbox['count'];
+  \Drupal::classResolver(ConfigEntityUpdater::class)->update($sandbox, 'block', function ($block) {
+    /** @var \Drupal\block\BlockInterface $block */
+    if (strpos($block->getPluginId(), 'views_exposed_filter_block:') === 0) {
+      $block->getPlugin()->setConfigurationValue('label_display', '0');
+      return TRUE;
+    }
+
+    return FALSE;
+  });
+}
+
+/**
+ * Rebuild cache to allow placeholder texts to be translatable.
+ */
+function views_post_update_make_placeholders_translatable() {
+  // Empty update to cause a cache rebuild to allow placeholder texts to be
+  // translatable.
 }

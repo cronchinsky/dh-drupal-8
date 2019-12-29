@@ -82,7 +82,7 @@ class Drupal {
   /**
    * The current system version.
    */
-  const VERSION = '8.5.15';
+  const VERSION = '8.7.11';
 
   /**
    * Core API compatibility.
@@ -121,7 +121,7 @@ class Drupal {
   /**
    * Returns the currently active global container.
    *
-   * @return \Symfony\Component\DependencyInjection\ContainerInterface|null
+   * @return \Symfony\Component\DependencyInjection\ContainerInterface
    *
    * @throws \Drupal\Core\DependencyInjection\ContainerNotInitializedException
    */
@@ -140,7 +140,6 @@ class Drupal {
   public static function hasContainer() {
     return static::$container !== NULL;
   }
-
 
   /**
    * Retrieves a service from the container.
@@ -230,7 +229,7 @@ class Drupal {
   }
 
   /**
-   * Retrives the request stack.
+   * Retrieves the request stack.
    *
    * @return \Symfony\Component\HttpFoundation\RequestStack
    *   The request stack
@@ -320,10 +319,20 @@ class Drupal {
    * One common usecase is to provide a class which contains the actual code
    * of a hook implementation, without having to create a service.
    *
-   * @return \Drupal\Core\DependencyInjection\ClassResolverInterface
-   *   The class resolver.
+   * @param string $class
+   *   (optional) A class name to instantiate.
+   *
+   * @return \Drupal\Core\DependencyInjection\ClassResolverInterface|object
+   *   The class resolver or if $class is provided, a class instance with a
+   *   given class definition.
+   *
+   * @throws \InvalidArgumentException
+   *   If $class does not exist.
    */
-  public static function classResolver() {
+  public static function classResolver($class = NULL) {
+    if ($class) {
+      return static::getContainer()->get('class_resolver')->getInstanceFromDefinition($class);
+    }
     return static::getContainer()->get('class_resolver');
   }
 
@@ -568,6 +577,7 @@ class Drupal {
    *   Url::fromRoute().
    */
   public static function url($route_name, $route_parameters = [], $options = [], $collect_bubbleable_metadata = FALSE) {
+    @trigger_error('Drupal::url() is deprecated as of Drupal 8.0.x, will be removed before Drupal 9.0.0. Instead create a \Drupal\Core\Url object directly, for example using Url::fromRoute()', E_USER_DEPRECATED);
     return static::getContainer()->get('url_generator')->generateFromRoute($route_name, $route_parameters, $options, $collect_bubbleable_metadata);
   }
 

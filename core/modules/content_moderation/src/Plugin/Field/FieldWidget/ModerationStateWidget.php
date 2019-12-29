@@ -127,7 +127,7 @@ class ModerationStateWidget extends OptionsSelectWidget implements ContainerFact
     $transitions = $this->validator->getValidTransitions($entity, $this->currentUser);
 
     $transition_labels = [];
-    $default_value = NULL;
+    $default_value = $items->value;
     foreach ($transitions as $transition) {
       $transition_to_state = $transition->to();
       $transition_labels[$transition_to_state->id()] = $transition_to_state->label();
@@ -176,6 +176,17 @@ class ModerationStateWidget extends OptionsSelectWidget implements ContainerFact
    */
   public static function isApplicable(FieldDefinitionInterface $field_definition) {
     return is_a($field_definition->getClass(), ModerationStateFieldItemList::class, TRUE);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function calculateDependencies() {
+    $dependencies = parent::calculateDependencies();
+    if ($workflow = $this->moderationInformation->getWorkflowForEntityTypeAndBundle($this->fieldDefinition->getTargetEntityTypeId(), $this->fieldDefinition->getTargetBundle())) {
+      $dependencies[$workflow->getConfigDependencyKey()][] = $workflow->getConfigDependencyName();
+    }
+    return $dependencies;
   }
 
 }

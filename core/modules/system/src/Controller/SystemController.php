@@ -100,7 +100,7 @@ class SystemController extends ControllerBase {
   public function overview($link_id) {
     // Check for status report errors.
     if ($this->systemManager->checkRequirements() && $this->currentUser()->hasPermission('administer site configuration')) {
-      drupal_set_message($this->t('One or more problems were detected with your Drupal installation. Check the <a href=":status">status report</a> for more information.', [':status' => $this->url('system.status')]), 'error');
+      $this->messenger()->addError($this->t('One or more problems were detected with your Drupal installation. Check the <a href=":status">status report</a> for more information.', [':status' => $this->url('system.status')]));
     }
     // Load all menu links below it.
     $parameters = new MenuTreeParameters();
@@ -187,7 +187,7 @@ class SystemController extends ControllerBase {
     uasort($themes, 'system_sort_modules_by_info_name');
 
     $theme_default = $config->get('default');
-    $theme_groups  = ['installed' => [], 'uninstalled' => []];
+    $theme_groups = ['installed' => [], 'uninstalled' => []];
     $admin_theme = $config->get('admin');
     $admin_theme_options = [];
 
@@ -222,8 +222,6 @@ class SystemController extends ControllerBase {
       }
 
       if (empty($theme->status)) {
-        // Ensure this theme is compatible with this version of core.
-        $theme->incompatible_core = !isset($theme->info['core']) || ($theme->info['core'] != \DRUPAL::CORE_COMPATIBILITY);
         // Require the 'content' region to make sure the main page
         // content has a common place in all themes.
         $theme->incompatible_region = !isset($theme->info['regions']['content']);
@@ -234,7 +232,7 @@ class SystemController extends ControllerBase {
         $theme->incompatible_engine = isset($theme->info['engine']) && !isset($theme->owner);
       }
       $theme->operations = [];
-      if (!empty($theme->status) || !$theme->incompatible_core && !$theme->incompatible_php && !$theme->incompatible_base && !$theme->incompatible_engine) {
+      if (!empty($theme->status) || !$theme->info['core_incompatible'] && !$theme->incompatible_php && !$theme->incompatible_base && !$theme->incompatible_engine) {
         // Create the operations links.
         $query['theme'] = $theme->getName();
         if ($this->themeAccess->checkAccess($theme->getName())) {

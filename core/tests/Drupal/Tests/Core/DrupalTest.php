@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\Core;
 
+use Drupal\Core\DependencyInjection\ClassResolverInterface;
 use Drupal\Core\DependencyInjection\ContainerNotInitializedException;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -120,8 +121,21 @@ class DrupalTest extends UnitTestCase {
    * @covers ::classResolver
    */
   public function testClassResolver() {
-    $this->setMockContainerService('class_resolver');
-    $this->assertNotNull(\Drupal::classResolver());
+    $class_resolver = $this->prophesize(ClassResolverInterface::class);
+    $this->setMockContainerService('class_resolver', $class_resolver->reveal());
+    $this->assertInstanceOf(ClassResolverInterface::class, \Drupal::classResolver());
+  }
+
+  /**
+   * Tests the classResolver method when called with a class.
+   *
+   * @covers ::classResolver
+   */
+  public function testClassResolverWithClass() {
+    $class_resolver = $this->prophesize(ClassResolverInterface::class);
+    $class_resolver->getInstanceFromDefinition(static::class)->willReturn($this);
+    $this->setMockContainerService('class_resolver', $class_resolver->reveal());
+    $this->assertSame($this, \Drupal::classResolver(static::class));
   }
 
   /**
@@ -344,6 +358,9 @@ class DrupalTest extends UnitTestCase {
    *
    * @covers ::url
    * @see \Drupal\Core\Routing\UrlGeneratorInterface::generateFromRoute()
+   *
+   * @group legacy
+   * @expectedDeprecation Drupal::url() is deprecated as of Drupal 8.0.x, will be removed before Drupal 9.0.0. Instead create a \Drupal\Core\Url object directly, for example using Url::fromRoute()
    */
   public function testUrl() {
     $route_parameters = ['test_parameter' => 'test'];

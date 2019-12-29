@@ -3,7 +3,7 @@
 namespace Drupal\Tests\block_content\Functional;
 
 use Drupal\block_content\Entity\BlockContent;
-use Drupal\simpletest\BlockCreationTrait;
+use Drupal\Tests\block\Traits\BlockCreationTrait;
 use Drupal\Tests\BrowserTestBase;
 
 /**
@@ -36,7 +36,7 @@ class UnpublishedBlockTest extends BrowserTestBase {
     $page = $this->getSession()->getPage();
     $this->assertTrue($page->has('css', '.block-block-content' . $block_content->uuid()));
 
-    $block_content->setPublished(FALSE);
+    $block_content->setUnpublished();
     $block_content->save();
 
     $this->drupalGet('<front>');

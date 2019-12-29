@@ -4,8 +4,11 @@ namespace Drupal\image\Entity;
 
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityWithPluginCollectionInterface;
+use Drupal\Core\File\Exception\FileException;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Routing\RequestHelper;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\Url;
@@ -14,7 +17,6 @@ use Drupal\image\ImageEffectInterface;
 use Drupal\image\ImageStyleInterface;
 use Drupal\Component\Utility\Crypt;
 use Drupal\Component\Utility\UrlHelper;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\StreamWrapper\StreamWrapperInterface;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
@@ -25,6 +27,13 @@ use Drupal\Core\Entity\Entity\EntityViewDisplay;
  * @ConfigEntityType(
  *   id = "image_style",
  *   label = @Translation("Image style"),
+ *   label_collection = @Translation("Image styles"),
+ *   label_singular = @Translation("image style"),
+ *   label_plural = @Translation("image styles"),
+ *   label_count = @PluralTranslation(
+ *     singular = "@count image style",
+ *     plural = "@count image styles",
+ *   ),
  *   handlers = {
  *     "form" = {
  *       "add" = "Drupal\image\Form\ImageStyleAddForm",
@@ -148,7 +157,7 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
           }
         }
       }
-      foreach (EntityViewDisplay::loadMultiple() as $display) {
+      foreach (EntityFormDisplay::loadMultiple() as $display) {
         foreach ($display->getComponents() as $name => $options) {
           if (isset($options['type']) && $options['type'] == 'image_image' && $options['settings']['preview_image_style'] == $style->getOriginalId()) {
             $options['settings']['preview_image_style'] = $style->id();
@@ -173,7 +182,10 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
       // source files not stored in the default scheme.
       if ($source_scheme != $default_scheme) {
         $class = $this->getStreamWrapperManager()->getClass($source_scheme);
-        $is_writable = $class::getType() & StreamWrapperInterface::WRITE;
+        $is_writable = NULL;
+        if ($class) {
+          $is_writable = $class::getType() & StreamWrapperInterface::WRITE;
+        }
 
         // Compute the derivative URI scheme. Derivatives created from writable
         // source stream wrappers will inherit the scheme. Derivatives created
@@ -244,10 +256,17 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
    */
   public function flush($path = NULL) {
     // A specific image path has been provided. Flush only that derivative.
+    /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+    $file_system = \Drupal::service('file_system');
     if (isset($path)) {
       $derivative_uri = $this->buildUri($path);
       if (file_exists($derivative_uri)) {
-        file_unmanaged_delete($derivative_uri);
+        try {
+          $file_system->delete($derivative_uri);
+        }
+        catch (FileException $e) {
+          // Ignore failed deletes.
+        }
       }
       return $this;
     }
@@ -256,7 +275,12 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
     $wrappers = $this->getStreamWrapperManager()->getWrappers(StreamWrapperInterface::WRITE_VISIBLE);
     foreach ($wrappers as $wrapper => $wrapper_data) {
       if (file_exists($directory = $wrapper . '://styles/' . $this->id())) {
-        file_unmanaged_delete_recursive($directory);
+        try {
+          $file_system->deleteRecursive($directory);
+        }
+        catch (FileException $e) {
+          // Ignore failed deletes.
+        }
       }
     }
 
@@ -283,10 +307,10 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
     }
 
     // Get the folder for the final location of this style.
-    $directory = drupal_dirname($derivative_uri);
+    $directory = \Drupal::service('file_system')->dirname($derivative_uri);
 
     // Build the destination folder tree if it doesn't already exist.
-    if (!file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+    if (!\Drupal::service('file_system')->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
       \Drupal::logger('image')->error('Failed to create style directory: %directory', ['%directory' => $directory]);
       return FALSE;
     }
@@ -348,7 +372,7 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
     // Only support the URI if its extension is supported by the current image
     // toolkit.
     return in_array(
-      Unicode::strtolower(pathinfo($uri, PATHINFO_EXTENSION)),
+      mb_strtolower(pathinfo($uri, PATHINFO_EXTENSION)),
       $this->getImageFactory()->getSupportedExtensions()
     );
   }

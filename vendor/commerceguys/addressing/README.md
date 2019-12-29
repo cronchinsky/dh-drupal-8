@@ -17,7 +17,7 @@ Features:
 - Zones
 
 The dataset is [stored locally](https://github.com/commerceguys/addressing/tree/master/resources) in JSON format.
-Countries are generated from [CLDR](http://cldr.unicode.org) v33. Address formats and subdivisions are generated from Google's [Address Data Service](https://chromium-i18n.appspot.com/ssl-address).
+Countries are generated from [CLDR](http://cldr.unicode.org) v36. Address formats and subdivisions are generated from Google's [Address Data Service](https://chromium-i18n.appspot.com/ssl-address).
 
 Further backstory can be found in [this blog post](https://drupalcommerce.org/blog/16864/commerce-2x-stories-addressing).
 
@@ -104,8 +104,8 @@ foreach ($states as $state) {
 
 // Get the subdivisions for Brazilian state Ceará.
 $municipalities = $subdivisionRepository->getAll(['BR', 'CE']);
-foreach ($states as $state) {
-    echo $state->getName();
+foreach ($municipalities as $municipality) {
+    echo $municipality->getName();
 }
 ```
 
@@ -173,7 +173,7 @@ $countryRepository = new CountryRepository();
 $subdivisionRepository = new SubdivisionRepository();
 // Defaults to text rendering. Requires passing the "origin_country"
 // (e.g. 'FR') to the constructor or to format().
-$formatter = new PostalLabelFormatter($addressFormatRepository, $countryRepository, $subdivisionRepository, ['locale' => 'fr]);
+$formatter = new PostalLabelFormatter($addressFormatRepository, $countryRepository, $subdivisionRepository, ['locale' => 'fr']);
 
 $address = new Address();
 $address = $address

@@ -1,21 +1,4 @@
 <?php
-/*
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This software consists of voluntary contributions made by many individuals
- * and is licensed under the MIT license. For more information, see
- * <http://www.doctrine-project.org>.
- */
 
 namespace Doctrine\Common\Cache;
 
@@ -23,28 +6,26 @@ use MongoBinData;
 use MongoCollection;
 use MongoCursorException;
 use MongoDate;
+use const E_USER_DEPRECATED;
+use function serialize;
+use function time;
+use function trigger_error;
+use function unserialize;
 
 /**
  * MongoDB cache provider.
  *
- * @author Jeremy Mikola <jmikola@gmail.com>
  * @internal Do not use - will be removed in 2.0. Use MongoDBCache instead
  */
 class LegacyMongoDBCache extends CacheProvider
 {
-    /**
-     * @var MongoCollection
-     */
+    /** @var MongoCollection */
     private $collection;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     private $expirationIndexCreated = false;
 
     /**
-     * Constructor.
-     *
      * This provider will default to the write concern and read preference
      * options set on the MongoCollection instance (or inherited from MongoDB or
      * MongoClient). Using an unacknowledged write concern (< 1) may make the
@@ -53,7 +34,6 @@ class LegacyMongoDBCache extends CacheProvider
      *
      * @see http://www.php.net/manual/en/mongo.readpreferences.php
      * @see http://www.php.net/manual/en/mongo.writeconcerns.php
-     * @param MongoCollection $collection
      */
     public function __construct(MongoCollection $collection)
     {
@@ -75,6 +55,7 @@ class LegacyMongoDBCache extends CacheProvider
         if ($this->isExpired($document)) {
             $this->createExpirationIndex();
             $this->doDelete($id);
+
             return false;
         }
 
@@ -95,6 +76,7 @@ class LegacyMongoDBCache extends CacheProvider
         if ($this->isExpired($document)) {
             $this->createExpirationIndex();
             $this->doDelete($id);
+
             return false;
         }
 
@@ -109,10 +91,12 @@ class LegacyMongoDBCache extends CacheProvider
         try {
             $result = $this->collection->update(
                 ['_id' => $id],
-                ['$set' => [
-                    MongoDBCache::EXPIRATION_FIELD => ($lifeTime > 0 ? new MongoDate(time() + $lifeTime) : null),
-                    MongoDBCache::DATA_FIELD => new MongoBinData(serialize($data), MongoBinData::BYTE_ARRAY),
-                ]],
+                [
+                    '$set' => [
+                        MongoDBCache::EXPIRATION_FIELD => ($lifeTime > 0 ? new MongoDate(time() + $lifeTime) : null),
+                        MongoDBCache::DATA_FIELD => new MongoBinData(serialize($data), MongoBinData::BYTE_ARRAY),
+                    ],
+                ],
                 ['upsert' => true, 'multiple' => false]
             );
         } catch (MongoCursorException $e) {
@@ -171,8 +155,6 @@ class LegacyMongoDBCache extends CacheProvider
      * Check if the document is expired.
      *
      * @param array $document
-     *
-     * @return bool
      */
     private function isExpired(array $document) : bool
     {
@@ -181,8 +163,7 @@ class LegacyMongoDBCache extends CacheProvider
             $document[MongoDBCache::EXPIRATION_FIELD]->sec < time();
     }
 
-
-    private function createExpirationIndex(): void
+    private function createExpirationIndex() : void
     {
         if ($this->expirationIndexCreated) {
             return;

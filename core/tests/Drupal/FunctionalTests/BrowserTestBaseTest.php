@@ -23,7 +23,7 @@ class BrowserTestBaseTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = ['test_page_test', 'form_test', 'system_test'];
+  public static $modules = ['test_page_test', 'form_test', 'system_test', 'node'];
 
   /**
    * Tests basic page test.
@@ -114,6 +114,7 @@ class BrowserTestBaseTest extends BrowserTestBase {
 
     // Test drupalPostForm().
     $edit = ['bananas' => 'red'];
+    // Submit the form using the button label.
     $result = $this->drupalPostForm('form-test/object-builder', $edit, 'Save');
     $this->assertSame($this->getSession()->getPage()->getContent(), $result);
     $value = $config_factory->get('form_test.object')->get('bananas');
@@ -123,9 +124,32 @@ class BrowserTestBaseTest extends BrowserTestBase {
     $value = $config_factory->get('form_test.object')->get('bananas');
     $this->assertSame('', $value);
 
+    // Submit the form using the button id.
+    $edit = ['bananas' => 'blue'];
+    $result = $this->drupalPostForm('form-test/object-builder', $edit, 'edit-submit');
+    $this->assertSame($this->getSession()->getPage()->getContent(), $result);
+    $value = $config_factory->get('form_test.object')->get('bananas');
+    $this->assertSame('blue', $value);
+
+    // Submit the form using the button name.
+    $edit = ['bananas' => 'purple'];
+    $result = $this->drupalPostForm('form-test/object-builder', $edit, 'op');
+    $this->assertSame($this->getSession()->getPage()->getContent(), $result);
+    $value = $config_factory->get('form_test.object')->get('bananas');
+    $this->assertSame('purple', $value);
+
     // Test drupalPostForm() with no-html response.
     $values = Json::decode($this->drupalPostForm('form_test/form-state-values-clean', [], t('Submit')));
     $this->assertTrue(1000, $values['beer']);
+
+    // Test drupalPostForm() with form by HTML id.
+    $this->drupalCreateContentType(['type' => 'page']);
+    $this->drupalLogin($this->drupalCreateUser(['create page content']));
+    $this->drupalGet('form-test/two-instances-of-same-form');
+    $this->getSession()->getPage()->fillField('edit-title-0-value', 'form1');
+    $this->getSession()->getPage()->fillField('edit-title-0-value--2', 'form2');
+    $this->drupalPostForm(NULL, [], 'Save', [], 'node-page-form--2');
+    $this->assertSession()->pageTextContains('Page form2 has been created.');
   }
 
   /**
@@ -211,7 +235,7 @@ class BrowserTestBaseTest extends BrowserTestBase {
     $this->assertText($sanitized);
 
     // Test getRawContent().
-    $this->assertSame($this->getSession()->getPage()->getContent(), $this->getRawContent());
+    $this->assertSame($this->getSession()->getPage()->getContent(), $this->getSession()->getPage()->getContent());
   }
 
   /**
@@ -450,9 +474,6 @@ class BrowserTestBaseTest extends BrowserTestBase {
       $this->pass($e->getMessage());
     }
 
-    // Test \Drupal\FunctionalTests\AssertLegacyTrait::getAllOptions.
-    $this->drupalGet('/form-test/select');
-    $this->assertCount(6, $this->getAllOptions($this->cssSelect('select[name="opt_groups"]')[0]));
   }
 
   /**
@@ -567,7 +588,7 @@ class BrowserTestBaseTest extends BrowserTestBase {
     $this->assertFieldChecked('edit-checkbox-enabled');
     $this->assertNoFieldChecked('edit-checkbox-disabled');
 
-    // Test that the assertion fails correctly with non-existant field id.
+    // Test that the assertion fails correctly with non-existent field id.
     try {
       $this->assertNoFieldChecked('incorrect_checkbox_id');
       $this->fail('The "incorrect_checkbox_id" field was found');
@@ -620,14 +641,20 @@ class BrowserTestBaseTest extends BrowserTestBase {
    * Tests the assumption that local time is in 'Australia/Sydney'.
    */
   public function testLocalTimeZone() {
+    $expected = 'Australia/Sydney';
     // The 'Australia/Sydney' time zone is set in core/tests/bootstrap.php
-    $this->assertEquals('Australia/Sydney', date_default_timezone_get());
+    $this->assertEquals($expected, date_default_timezone_get());
 
     // The 'Australia/Sydney' time zone is also set in
     // FunctionalTestSetupTrait::initConfig().
     $config_factory = $this->container->get('config.factory');
     $value = $config_factory->get('system.date')->get('timezone.default');
-    $this->assertEquals('Australia/Sydney', $value);
+    $this->assertEquals($expected, $value);
+
+    // Test that users have the correct time zone set.
+    $this->assertEquals($expected, $this->rootUser->getTimeZone());
+    $admin_user = $this->drupalCreateUser(['administer site configuration']);
+    $this->assertEquals($expected, $admin_user->getTimeZone());
   }
 
   /**
@@ -652,6 +679,58 @@ class BrowserTestBaseTest extends BrowserTestBase {
     putenv('MINK_DRIVER_ARGS=' . json_encode([NULL, ['key1' => ['key2' => ['key3' => 3, 'key3.1' => 3.1]]]]));
     $this->getDefaultDriverInstance();
     $this->assertEquals([NULL, ['key1' => ['key2' => ['key3' => 3, 'key3.1' => 3.1]]]], $this->minkDefaultDriverArgs);
+  }
+
+  /**
+   * Ensures we can't access modules we shouldn't be able to after install.
+   */
+  public function testProfileModules() {
+    $this->setExpectedException(\InvalidArgumentException::class, 'The module demo_umami_content does not exist.');
+    $this->assertFileExists('core/profiles/demo_umami/modules/demo_umami_content/demo_umami_content.info.yml');
+    \Drupal::service('extension.list.module')->getPathname('demo_umami_content');
+  }
+
+  /**
+   * Test the protections provided by .htkey.
+   */
+  public function testHtkey() {
+    // Remove the Simpletest private key file so we can test the protection
+    // against requests that forge a valid testing user agent to gain access
+    // to the installer.
+    // @see drupal_valid_test_ua()
+    // Not using File API; a potential error must trigger a PHP warning.
+    $install_url = Url::fromUri('base:core/install.php', ['external' => TRUE, 'absolute' => TRUE])->toString();
+    $this->drupalGet($install_url);
+    $this->assertSession()->statusCodeEquals(200);
+    unlink($this->siteDirectory . '/.htkey');
+    $this->drupalGet($install_url);
+    $this->assertSession()->statusCodeEquals(403);
+  }
+
+  /**
+   * Tests assertEscaped() and assertUnescaped().
+   *
+   * @see \Drupal\Tests\WebAssert::assertNoEscaped()
+   * @see \Drupal\Tests\WebAssert::assertEscaped()
+   */
+  public function testEscapingAssertions() {
+    $assert = $this->assertSession();
+
+    $this->drupalGet('test-escaped-characters');
+    $assert->assertNoEscaped('<div class="escaped">');
+    $assert->responseContains('<div class="escaped">');
+    $assert->assertEscaped('Escaped: <"\'&>');
+
+    $this->drupalGet('test-escaped-script');
+    $assert->assertNoEscaped('<div class="escaped">');
+    $assert->responseContains('<div class="escaped">');
+    $assert->assertEscaped("<script>alert('XSS');alert(\"XSS\");</script>");
+
+    $this->drupalGet('test-unescaped-script');
+    $assert->assertNoEscaped('<div class="unescaped">');
+    $assert->responseContains('<div class="unescaped">');
+    $assert->responseContains("<script>alert('Marked safe');alert(\"Marked safe\");</script>");
+    $assert->assertNoEscaped("<script>alert('Marked safe');alert(\"Marked safe\");</script>");
   }
 
 }

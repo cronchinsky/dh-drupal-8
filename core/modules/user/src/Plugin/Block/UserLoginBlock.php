@@ -9,6 +9,7 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Block\BlockBase;
+use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -64,7 +65,6 @@ class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterfac
     );
   }
 
-
   /**
    * {@inheritdoc}
    */
@@ -97,7 +97,7 @@ class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterfac
     // will be replaced at the very last moment. This ensures forms with
     // dynamically generated action URLs don't have poor cacheability.
     // Use the proper API to generate the placeholder, when we have one. See
-    // https://www.drupal.org/node/2562341. The placholder uses a fixed string
+    // https://www.drupal.org/node/2562341. The placeholder uses a fixed string
     // that is
     // Crypt::hashBase64('\Drupal\user\Plugin\Block\UserLoginBlock::build');
     // This is based on the implementation in
@@ -112,7 +112,7 @@ class UserLoginBlock extends BlockBase implements ContainerFactoryPluginInterfac
 
     // Build action links.
     $items = [];
-    if (\Drupal::config('user.settings')->get('register') != USER_REGISTER_ADMINISTRATORS_ONLY) {
+    if (\Drupal::config('user.settings')->get('register') != UserInterface::REGISTER_ADMINISTRATORS_ONLY) {
       $items['create_account'] = [
         '#type' => 'link',
         '#title' => $this->t('Create new account'),

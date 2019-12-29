@@ -6,13 +6,15 @@ use Drupal\entity_test\Entity\EntityTestMulRevPub;
 use Drupal\entity_test\Entity\EntityTestRev;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
-use Drupal\workflows\Entity\Workflow;
+use Drupal\Tests\content_moderation\Traits\ContentModerationTestTrait;
 
 /**
  * @coversDefaultClass \Drupal\content_moderation\ModerationInformation
  * @group content_moderation
  */
 class ModerationInformationTest extends KernelTestBase {
+
+  use ContentModerationTestTrait;
 
   /**
    * {@inheritdoc}
@@ -48,7 +50,7 @@ class ModerationInformationTest extends KernelTestBase {
 
     ConfigurableLanguage::createFromLangcode('de')->save();
 
-    $workflow = Workflow::load('editorial');
+    $workflow = $this->createEditorialWorkflow();
     $workflow->getTypePlugin()->addEntityTypeAndBundle('entity_test_mulrevpub', 'entity_test_mulrevpub');
     $workflow->getTypePlugin()->addEntityTypeAndBundle('entity_test_rev', 'entity_test_rev');
     $workflow->save();
@@ -149,7 +151,38 @@ class ModerationInformationTest extends KernelTestBase {
     // language in a draft state and a non-default language in a published
     // state. The method returns TRUE if any of the languages for the default
     // revision are in a published state.
-    $this->assertEquals(TRUE, $this->moderationInformation->isDefaultRevisionPublished($entity));
+    $this->assertTrue($this->moderationInformation->isDefaultRevisionPublished($entity));
+  }
+
+  /**
+   * @covers ::hasPendingRevision
+   */
+  public function testHasPendingRevision() {
+    $entity = EntityTestMulRevPub::create([
+      'moderation_state' => 'published',
+    ]);
+    $entity->save();
+
+    // Add a translation as a new revision.
+    $translated = $entity->addTranslation('de');
+    $translated->moderation_state = 'published';
+    $translated->setNewRevision(TRUE);
+
+    // Test a scenario where the default revision exists with the default
+    // language in a published state and a non-default language in an unsaved
+    // state.
+    $this->assertFalse($this->moderationInformation->hasPendingRevision($translated));
+
+    // Save the translation and assert there is no pending revision.
+    $translated->save();
+    $this->assertFalse($this->moderationInformation->hasPendingRevision($translated));
+
+    // Create a new draft for the translation and assert there is a pending
+    // revision.
+    $translated->moderation_state = 'draft';
+    $translated->setNewRevision(TRUE);
+    $translated->save();
+    $this->assertTrue($this->moderationInformation->hasPendingRevision($translated));
   }
 
 }

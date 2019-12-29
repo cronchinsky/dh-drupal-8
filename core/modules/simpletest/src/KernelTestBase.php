@@ -2,8 +2,10 @@
 
 namespace Drupal\simpletest;
 
+@trigger_error(__NAMESPACE__ . '\KernelTestBase is deprecated in Drupal 8.0.x, will be removed before Drupal 9.0.0. Use \Drupal\KernelTests\KernelTestBase instead.', E_USER_DEPRECATED);
+
 use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\Variable;
 use Drupal\Core\Config\Development\ConfigSchemaChecker;
 use Drupal\Core\Database\Database;
@@ -11,9 +13,11 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Entity\Sql\SqlEntityStorageInterface;
 use Drupal\Core\Extension\ExtensionDiscovery;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\KeyValueStore\KeyValueMemoryFactory;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Site\Settings;
+use Drupal\KernelTests\TestServiceProvider;
 use Symfony\Component\DependencyInjection\Parameter;
 use Drupal\Core\StreamWrapper\StreamWrapperInterface;
 use Symfony\Component\DependencyInjection\Reference;
@@ -101,7 +105,7 @@ abstract class KernelTestBase extends TestBase {
   /**
    * A KeyValueMemoryFactory instance to use when building the container.
    *
-   * @var \Drupal\Core\KeyValueStore\KeyValueMemoryFactory.
+   * @var \Drupal\Core\KeyValueStore\KeyValueMemoryFactory
    */
   protected $keyValueFactory;
 
@@ -146,7 +150,7 @@ abstract class KernelTestBase extends TestBase {
     $path = $this->siteDirectory . '/config_' . CONFIG_SYNC_DIRECTORY;
     $GLOBALS['config_directories'][CONFIG_SYNC_DIRECTORY] = $path;
     // Ensure the directory can be created and is writeable.
-    if (!file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+    if (!\Drupal::service('file_system')->prepareDirectory($path, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
       throw new \RuntimeException("Failed to create '" . CONFIG_SYNC_DIRECTORY . "' config directory $path");
     }
     // Provide the already resolved path for tests.
@@ -198,7 +202,7 @@ EOD;
 
     // Add this test class as a service provider.
     // @todo Remove the indirection; implement ServiceProviderInterface instead.
-    $GLOBALS['conf']['container_service_providers']['TestServiceProvider'] = 'Drupal\simpletest\TestServiceProvider';
+    $GLOBALS['conf']['container_service_providers']['TestServiceProvider'] = TestServiceProvider::class;
 
     // Bootstrap a new kernel.
     $class_loader = require DRUPAL_ROOT . '/autoload.php';
@@ -282,9 +286,7 @@ EOD;
 
     // Tests based on this class are entitled to use Drupal's File and
     // StreamWrapper APIs.
-    // @todo Move StreamWrapper management into DrupalKernel.
-    // @see https://www.drupal.org/node/2028109
-    file_prepare_directory($this->publicFilesDirectory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+    \Drupal::service('file_system')->prepareDirectory($this->publicFilesDirectory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
     $this->settingsSet('file_public_path', $this->publicFilesDirectory);
     $this->streamWrappers = [];
     $this->registerStreamWrapper('public', 'Drupal\Core\StreamWrapper\PublicStream');
@@ -477,7 +479,6 @@ EOD;
     ]));
   }
 
-
   /**
    * Installs the storage schema for a specific entity type.
    *
@@ -499,7 +500,7 @@ EOD;
       $all_tables_exist = TRUE;
       foreach ($tables as $table) {
         if (!$db_schema->tableExists($table)) {
-          $this->fail(SafeMarkup::format('Installed entity type table for the %entity_type entity type: %table', [
+          $this->fail(new FormattableMarkup('Installed entity type table for the %entity_type entity type: %table', [
             '%entity_type' => $entity_type_id,
             '%table' => $table,
           ]));
@@ -507,7 +508,7 @@ EOD;
         }
       }
       if ($all_tables_exist) {
-        $this->pass(SafeMarkup::format('Installed entity type tables for the %entity_type entity type: %tables', [
+        $this->pass(new FormattableMarkup('Installed entity type tables for the %entity_type entity type: %tables', [
           '%entity_type' => $entity_type_id,
           '%tables' => '{' . implode('}, {', $tables) . '}',
         ]));

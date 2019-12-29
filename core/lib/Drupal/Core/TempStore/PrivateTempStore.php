@@ -2,6 +2,7 @@
 
 namespace Drupal\Core\TempStore;
 
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\KeyValueStore\KeyValueStoreExpirableInterface;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Session\AccountProxyInterface;
@@ -27,6 +28,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  * \Drupal\Core\TempStore\SharedTempStore.
  */
 class PrivateTempStore {
+  use DependencySerializationTrait;
 
   /**
    * The key/value storage object used for this data.
@@ -123,6 +125,7 @@ class PrivateTempStore {
     if ($this->currentUser->isAnonymous()) {
       // @todo when https://www.drupal.org/node/2865991 is resolved, use force
       //   start session API rather than setting an arbitrary value directly.
+      $this->startSession();
       $this->requestStack
         ->getCurrentRequest()
         ->getSession()
@@ -152,7 +155,7 @@ class PrivateTempStore {
    * @param string $key
    *   The key of the data to store.
    *
-   * @return mixed
+   * @return \Drupal\Core\TempStore\Lock|null
    *   An object with the owner and updated time if the key has a value, or
    *   NULL otherwise.
    */
@@ -163,7 +166,7 @@ class PrivateTempStore {
     if ($object) {
       // Don't keep the data itself in memory.
       unset($object->data);
-      return $object;
+      return new Lock($object->owner, $object->updated);
     }
   }
 
@@ -219,7 +222,34 @@ class PrivateTempStore {
    *   The owner.
    */
   protected function getOwner() {
-    return $this->currentUser->id() ?: $this->requestStack->getCurrentRequest()->getSession()->getId();
+    $owner = $this->currentUser->id();
+    if ($this->currentUser->isAnonymous()) {
+      $this->startSession();
+      $owner = $this->requestStack->getCurrentRequest()->getSession()->getId();
+    }
+    return $owner;
+  }
+
+  /**
+   * Start session because it is required for a private temp store.
+   *
+   * Ensures that an anonymous user has a session created for them, as
+   * otherwise subsequent page loads will not be able to retrieve their
+   * tempstore data.
+   *
+   * @todo when https://www.drupal.org/node/2865991 is resolved, use force
+   * start session API.
+   */
+  protected function startSession() {
+    $has_session = $this->requestStack
+      ->getCurrentRequest()
+      ->hasSession();
+    if (!$has_session) {
+      /** @var \Symfony\Component\HttpFoundation\Session\SessionInterface $session */
+      $session = \Drupal::service('session');
+      $this->requestStack->getCurrentRequest()->setSession($session);
+      $session->start();
+    }
   }
 
 }

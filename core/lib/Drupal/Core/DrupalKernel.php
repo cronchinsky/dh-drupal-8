@@ -5,7 +5,6 @@ namespace Drupal\Core;
 use Composer\Autoload\ClassLoader;
 use Drupal\Component\Assertion\Handle;
 use Drupal\Component\FileCache\FileCacheFactory;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Cache\DatabaseBackend;
 use Drupal\Core\Config\BootstrapConfigStorageFactory;
@@ -303,12 +302,16 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
   }
 
   /**
-   * Determine the application root directory based on assumptions.
+   * Determine the application root directory based on this file's location.
    *
    * @return string
    *   The application root.
    */
   protected static function guessApplicationRoot() {
+    // Determine the application root by:
+    // - Removing the namespace directories from the path.
+    // - Getting the path to the directory two levels up from the path
+    //   determined in the previous step.
     return dirname(dirname(substr(__DIR__, 0, -strlen(__NAMESPACE__))));
   }
 
@@ -1024,8 +1027,9 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
     // numbers handling.
     setlocale(LC_ALL, 'C');
 
-    // Detect string handling method.
-    Unicode::check();
+    // Set appropriate configuration for multi-byte strings.
+    mb_internal_encoding('utf-8');
+    mb_language('uni');
 
     // Indicate that code is operating in a test child site.
     if (!defined('DRUPAL_TEST_IN_CHILD_SITE')) {
@@ -1115,7 +1119,7 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
         // misses.
         $old_loader = $this->classLoader;
         $this->classLoader = $loader;
-        // Our class loaders are preprended to ensure they come first like the
+        // Our class loaders are prepended to ensure they come first like the
         // class loader they are replacing.
         $old_loader->register(TRUE);
         $loader->register(TRUE);
@@ -1583,7 +1587,7 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
    * @return bool
    *   TRUE if the Host header is trusted, FALSE otherwise.
    *
-   * @see https://www.drupal.org/node/1992030
+   * @see https://www.drupal.org/docs/8/install/trusted-host-settings
    * @see \Drupal\Core\Http\TrustedHostsRequestFactory
    */
   protected static function setupTrustedHosts(Request $request, $host_patterns) {
@@ -1628,13 +1632,14 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
    */
   protected function getInstallProfile() {
     $config = $this->getConfigStorage()->read('core.extension');
-    if (!empty($config['profile'])) {
+    if (isset($config['profile'])) {
       $install_profile = $config['profile'];
     }
     // @todo https://www.drupal.org/node/2831065 remove the BC layer.
     else {
       // If system_update_8300() has not yet run fallback to using settings.
-      $install_profile = Settings::get('install_profile');
+      $settings = Settings::getAll();
+      $install_profile = isset($settings['install_profile']) ? $settings['install_profile'] : NULL;
     }
 
     // Normalize an empty string to a NULL value.

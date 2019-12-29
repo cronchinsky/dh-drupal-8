@@ -6,6 +6,7 @@ use Drupal\Component\PhpStorage\FileStorage;
 use Composer\Script\Event;
 use Composer\Installer\PackageEvent;
 use Composer\Semver\Constraint\Constraint;
+use Composer\Util\ProcessExecutor;
 
 /**
  * Provides static functions for composer script events.
@@ -18,6 +19,7 @@ class Composer {
     'behat/mink' => ['tests', 'driver-testsuite'],
     'behat/mink-browserkit-driver' => ['tests'],
     'behat/mink-goutte-driver' => ['tests'],
+    'brumann/polyfill-unserialize' => ['tests'],
     'drupal/coder' => ['coder_sniffer/Drupal/Test', 'coder_sniffer/DrupalPractice/Test'],
     'doctrine/cache' => ['tests'],
     'doctrine/collections' => ['tests'],
@@ -33,6 +35,10 @@ class Composer {
     'masterminds/html5' => ['test'],
     'mikey179/vfsStream' => ['src/test'],
     'paragonie/random_compat' => ['tests'],
+    'pear/archive_tar' => ['tests'],
+    'pear/console_getopt' => ['tests'],
+    'pear/pear-core-minimal' => ['tests'],
+    'pear/pear_exception' => ['tests'],
     'phpdocumentor/reflection-docblock' => ['tests'],
     'phpunit/php-code-coverage' => ['tests'],
     'phpunit/php-timer' => ['tests'],
@@ -65,7 +71,7 @@ class Composer {
     'symfony/validator' => ['Tests', 'Resources'],
     'symfony/yaml' => ['Tests'],
     'symfony-cmf/routing' => ['Test', 'Tests'],
-    'twig/twig' => ['doc', 'ext', 'test'],
+    'twig/twig' => ['doc', 'ext', 'test', 'tests'],
   ];
 
   /**
@@ -160,7 +166,7 @@ EOT;
       return;
     }
 
-    // If the PHP version is 7.2 or above and PHPUnit is less than version 6
+    // If the PHP version is 7.0 or above and PHPUnit is less than version 6
     // call the drupal-phpunit-upgrade script to upgrade PHPUnit.
     if (!static::upgradePHPUnitCheck($phpunit_package->getVersion())) {
       $event->getComposer()
@@ -182,7 +188,7 @@ EOT;
    *   TRUE if the PHPUnit needs to be upgraded, FALSE if not.
    */
   public static function upgradePHPUnitCheck($phpunit_version) {
-    return !(version_compare(PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION, '7.2') >= 0 && version_compare($phpunit_version, '6.1') < 0);
+    return !(version_compare(PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION, '7.0') >= 0 && version_compare($phpunit_version, '6.1') < 0);
   }
 
   /**
@@ -267,6 +273,13 @@ EOT;
       }
     }
     return $package_key;
+  }
+
+  /**
+   * Removes Composer's timeout so that scripts can run indefinitely.
+   */
+  public static function removeTimeout() {
+    ProcessExecutor::setTimeout(0);
   }
 
   /**

@@ -2,58 +2,30 @@
 
 namespace Doctrine\Common\Persistence;
 
-/**
- * Contract for a Doctrine persistence layer ObjectRepository class to implement.
- */
-interface ObjectRepository
-{
-    /**
-     * Finds an object by its primary key / identifier.
-     *
-     * @param mixed $id The identifier.
-     *
-     * @return object|null The object.
-     */
-    public function find($id);
+use const E_USER_DEPRECATED;
+use function class_alias;
+use function interface_exists;
+use function sprintf;
+use function trigger_error;
 
-    /**
-     * Finds all objects in the repository.
-     *
-     * @return object[] The objects.
-     */
-    public function findAll();
+if (! interface_exists(\Doctrine\Persistence\ObjectRepository::class, false)) {
+    @trigger_error(sprintf(
+        'The %s\ObjectRepository class is deprecated since doctrine/persistence 1.3 and will be removed in 2.0.'
+        . ' Use \Doctrine\Persistence\ObjectRepository instead.',
+        __NAMESPACE__
+    ), E_USER_DEPRECATED);
+}
 
-    /**
-     * Finds objects by a set of criteria.
-     *
-     * Optionally sorting and limiting details can be passed. An implementation may throw
-     * an UnexpectedValueException if certain values of the sorting or limiting details are
-     * not supported.
-     *
-     * @param mixed[]       $criteria
-     * @param string[]|null $orderBy
-     * @param int|null      $limit
-     * @param int|null      $offset
-     *
-     * @return object[] The objects.
-     *
-     * @throws \UnexpectedValueException
-     */
-    public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null);
+class_alias(
+    \Doctrine\Persistence\ObjectRepository::class,
+    __NAMESPACE__ . '\ObjectRepository'
+);
 
+if (false) {
     /**
-     * Finds a single object by a set of criteria.
-     *
-     * @param mixed[] $criteria The criteria.
-     *
-     * @return object|null The object.
+     * @deprecated 1.3 Use Doctrine\Persistence\ObjectRepository
      */
-    public function findOneBy(array $criteria);
-
-    /**
-     * Returns the class name of the object managed by the repository.
-     *
-     * @return string
-     */
-    public function getClassName();
+    interface ObjectRepository extends \Doctrine\Persistence\ObjectRepository
+    {
+    }
 }

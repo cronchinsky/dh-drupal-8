@@ -6,6 +6,7 @@ use Drupal\Core\Menu\MenuTreeParameters;
 use Drupal\menu_link_content\Entity\MenuLinkContent;
 use Drupal\menu_link_content\MenuLinkContentInterface;
 use Drupal\Tests\migrate_drupal\Kernel\d7\MigrateDrupal7TestBase;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 
 /**
  * Menu link migration.
@@ -14,6 +15,8 @@ use Drupal\Tests\migrate_drupal\Kernel\d7\MigrateDrupal7TestBase;
  */
 class MigrateMenuLinkTest extends MigrateDrupal7TestBase {
   const MENU_NAME = 'menu-test-menu';
+
+  use UserCreationTrait;
 
   /**
    * {@inheritdoc}
@@ -24,6 +27,8 @@ class MigrateMenuLinkTest extends MigrateDrupal7TestBase {
     'link',
     'menu_ui',
     'menu_link_content',
+    // Required for translation migrations.
+    'migrate_drupal_multilingual',
     'node',
     'text',
   ];
@@ -33,15 +38,16 @@ class MigrateMenuLinkTest extends MigrateDrupal7TestBase {
    */
   protected function setUp() {
     parent::setUp();
+
+    $this->setUpCurrentUser();
     $this->installEntitySchema('menu_link_content');
-    $this->installEntitySchema('node');
     $this->installSchema('node', ['node_access']);
     $this->installConfig(static::$modules);
+
+    $this->migrateUsers(FALSE);
+    $this->migrateContentTypes();
     $this->executeMigrations([
       'language',
-      'd7_user_role',
-      'd7_user',
-      'd7_node_type',
       'd7_language_content_settings',
       'd7_node',
       'd7_node_translation',

@@ -43,6 +43,7 @@ class ContentEntityNullStorageTest extends KernelTestBase {
    * @see \Drupal\Core\Entity\Event\BundleConfigImportValidate
    */
   public function testDeleteThroughImport() {
+    $this->installConfig(['system']);
     $contact_form = ContactForm::create(['id' => 'test']);
     $contact_form->save();
 
@@ -51,8 +52,7 @@ class ContentEntityNullStorageTest extends KernelTestBase {
     // Set up the ConfigImporter object for testing.
     $storage_comparer = new StorageComparer(
       $this->container->get('config.storage.sync'),
-      $this->container->get('config.storage'),
-      $this->container->get('config.manager')
+      $this->container->get('config.storage')
     );
     $config_importer = new ConfigImporter(
       $storage_comparer->createChangelist(),

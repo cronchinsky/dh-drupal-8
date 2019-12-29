@@ -5,6 +5,7 @@ namespace Drupal\Tests\menu_link_content\Kernel\Migrate\d6;
 use Drupal\menu_link_content\Entity\MenuLinkContent;
 use Drupal\menu_link_content\MenuLinkContentInterface;
 use Drupal\Tests\node\Kernel\Migrate\d6\MigrateNodeTestBase;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 
 /**
  * Menu link migration.
@@ -13,6 +14,8 @@ use Drupal\Tests\node\Kernel\Migrate\d6\MigrateNodeTestBase;
  */
 class MigrateMenuLinkTest extends MigrateNodeTestBase {
 
+  use UserCreationTrait;
+
   /**
    * {@inheritdoc}
    */
@@ -20,6 +23,8 @@ class MigrateMenuLinkTest extends MigrateNodeTestBase {
     'content_translation',
     'language',
     'menu_link_content',
+    // Required for translation migrations.
+    'migrate_drupal_multilingual',
     'menu_ui',
   ];
 
@@ -28,6 +33,7 @@ class MigrateMenuLinkTest extends MigrateNodeTestBase {
    */
   protected function setUp() {
     parent::setUp();
+    $this->setUpCurrentUser();
     $this->installEntitySchema('menu_link_content');
     $this->executeMigrations([
       'language',

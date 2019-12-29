@@ -24,8 +24,8 @@ class InstallerTranslationTest extends InstallerTestBase {
    */
   protected function setUpLanguage() {
     // Place a custom local translation in the translations directory.
-    mkdir(\Drupal::root() . '/' . $this->siteDirectory . '/files/translations', 0777, TRUE);
-    file_put_contents(\Drupal::root() . '/' . $this->siteDirectory . '/files/translations/drupal-8.0.0.de.po', $this->getPo('de'));
+    mkdir($this->root . '/' . $this->siteDirectory . '/files/translations', 0777, TRUE);
+    file_put_contents($this->root . '/' . $this->siteDirectory . '/files/translations/drupal-8.0.0.de.po', $this->getPo('de'));
 
     parent::setUpLanguage();
 
@@ -48,12 +48,12 @@ class InstallerTranslationTest extends InstallerTestBase {
     // it will try and create the drupal_install_test table as this is part of
     // the standard database tests performed by the installer in
     // Drupal\Core\Database\Install\Tasks.
-    Database::getConnection('default')->query('CREATE TABLE {drupal_install_test} (id int NULL)');
+    Database::getConnection('default')->query('CREATE TABLE {drupal_install_test} (id int NOT NULL PRIMARY KEY)');
     parent::setUpSettings();
 
     // Ensure that the error message translation is working.
-    $this->assertRaw('Beheben Sie alle Probleme unten, um die Installation fortzusetzen. Informationen zur Konfiguration der Datenbankserver finden Sie in der <a href="https://www.drupal.org/getting-started/install">Installationshandbuch</a>, oder kontaktieren Sie Ihren Hosting-Anbieter.');
-    $this->assertRaw('<strong>CREATE</strong> ein Test-Tabelle auf Ihrem Datenbankserver mit dem Befehl <em class="placeholder">CREATE TABLE {drupal_install_test} (id int NULL)</em> fehlgeschlagen.');
+    $this->assertRaw('Beheben Sie alle Probleme unten, um die Installation fortzusetzen. Informationen zur Konfiguration der Datenbankserver finden Sie in der <a href="https://www.drupal.org/docs/8/install">Installationshandbuch</a>, oder kontaktieren Sie Ihren Hosting-Anbieter.');
+    $this->assertRaw('<strong>CREATE</strong> ein Test-Tabelle auf Ihrem Datenbankserver mit dem Befehl <em class="placeholder">CREATE TABLE {drupal_install_test} (id int NOT NULL PRIMARY KEY)</em> fehlgeschlagen.');
 
     // Now do it successfully.
     Database::getConnection('default')->query('DROP TABLE {drupal_install_test}');
@@ -143,8 +143,8 @@ msgstr "Save and continue $langcode"
 msgid "Anonymous"
 msgstr "Anonymous $langcode"
 
-msgid "Resolve all issues below to continue the installation. For help configuring your database server, see the <a href="https://www.drupal.org/getting-started/install">installation handbook</a>, or contact your hosting provider."
-msgstr "Beheben Sie alle Probleme unten, um die Installation fortzusetzen. Informationen zur Konfiguration der Datenbankserver finden Sie in der <a href="https://www.drupal.org/getting-started/install">Installationshandbuch</a>, oder kontaktieren Sie Ihren Hosting-Anbieter."
+msgid "Resolve all issues below to continue the installation. For help configuring your database server, see the <a href="https://www.drupal.org/docs/8/install">installation handbook</a>, or contact your hosting provider."
+msgstr "Beheben Sie alle Probleme unten, um die Installation fortzusetzen. Informationen zur Konfiguration der Datenbankserver finden Sie in der <a href="https://www.drupal.org/docs/8/install">Installationshandbuch</a>, oder kontaktieren Sie Ihren Hosting-Anbieter."
 
 msgid "Failed to <strong>CREATE</strong> a test table on your database server with the command %query. The server reports the following message: %error.<p>Are you sure the configured username has the necessary permissions to create tables in the database?</p>"
 msgstr "<strong>CREATE</strong> ein Test-Tabelle auf Ihrem Datenbankserver mit dem Befehl %query fehlgeschlagen."

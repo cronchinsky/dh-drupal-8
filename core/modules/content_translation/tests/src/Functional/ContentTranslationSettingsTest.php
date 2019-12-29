@@ -154,7 +154,7 @@ class ContentTranslationSettingsTest extends BrowserTestBase {
       'settings[node][article][settings][language][langcode]' => 'current_interface',
       'settings[node][article][settings][language][language_alterable]' => TRUE,
       'settings[node][article][translatable]' => TRUE,
-      'settings[node][article][fields][title]' => TRUE
+      'settings[node][article][fields][title]' => TRUE,
     ];
     $this->assertSettings('node', NULL, TRUE, $edit);
 
@@ -238,7 +238,6 @@ class ContentTranslationSettingsTest extends BrowserTestBase {
     $this->drupalPostForm('admin/config/regional/content-language', $edit, t('Save configuration'));
     $args = ['@entity_type' => $entity_type, '@bundle' => $bundle, '@enabled' => $enabled ? 'enabled' : 'disabled'];
     $message = format_string('Translation for entity @entity_type (@bundle) is @enabled.', $args);
-    \Drupal::entityManager()->clearCachedDefinitions();
     return $this->assertEqual(\Drupal::service('content_translation.manager')->isEnabled($entity_type, $bundle), $enabled, $message);
   }
 

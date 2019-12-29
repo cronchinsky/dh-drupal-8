@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\search\Kernel;
 
+use Drupal\Core\Database\Database;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\KernelTests\KernelTestBase;
 
@@ -156,10 +157,11 @@ class SearchMatchTest extends KernelTestBase {
       '"am minim veniam" -"cillum dolore"' => [5, 6],
       '"am minim veniam" -"dolore cillum"' => [5, 6, 7],
       'xxxxx "minim am veniam es" OR dolore' => [],
-      'xx "minim am veniam es" OR dolore' => []
+      'xx "minim am veniam es" OR dolore' => [],
     ];
+    $connection = Database::getConnection();
     foreach ($queries as $query => $results) {
-      $result = db_select('search_index', 'i')
+      $result = $connection->select('search_index', 'i')
         ->extend('Drupal\search\SearchQuery')
         ->searchExpression($query, static::SEARCH_TYPE)
         ->execute();
@@ -179,7 +181,7 @@ class SearchMatchTest extends KernelTestBase {
       'germany' => [11, 12],
     ];
     foreach ($queries as $query => $results) {
-      $result = db_select('search_index', 'i')
+      $result = $connection->select('search_index', 'i')
         ->extend('Drupal\search\SearchQuery')
         ->searchExpression($query, static::SEARCH_TYPE_2)
         ->execute();
@@ -202,7 +204,7 @@ class SearchMatchTest extends KernelTestBase {
       'ヒーキ' => [],
     ];
     foreach ($queries as $query => $results) {
-      $result = db_select('search_index', 'i')
+      $result = $connection->select('search_index', 'i')
         ->extend('Drupal\search\SearchQuery')
         ->searchExpression($query, static::SEARCH_TYPE_JPN)
         ->execute();

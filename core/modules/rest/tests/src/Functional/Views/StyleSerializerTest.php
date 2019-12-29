@@ -10,7 +10,7 @@ use Drupal\entity_test\Entity\EntityTest;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\language\Entity\ConfigurableLanguage;
-use Drupal\system\Tests\Cache\AssertPageCacheContextsAndTagsTrait;
+use Drupal\Tests\system\Functional\Cache\AssertPageCacheContextsAndTagsTrait;
 use Drupal\Tests\views\Functional\ViewTestBase;
 use Drupal\views\Entity\View;
 use Drupal\views\Plugin\views\display\DisplayPluginBase;
@@ -84,7 +84,7 @@ class StyleSerializerTest extends ViewTestBase {
     // to see the page.
     $url = $this->buildUrl('test/serialize/auth_with_perm');
     $response = \Drupal::httpClient()->get($url, [
-      'auth' => [$this->adminUser->getUsername(), $this->adminUser->pass_raw],
+      'auth' => [$this->adminUser->getAccountName(), $this->adminUser->pass_raw],
       'query' => [
         '_format' => 'json',
       ],
@@ -296,7 +296,7 @@ class StyleSerializerTest extends ViewTestBase {
       'entity_test:7',
       'entity_test:8',
       'entity_test:9',
-      'entity_test_list'
+      'entity_test_list',
     ];
     $cache_contexts = [
       'entity_test_view_grants',
@@ -639,7 +639,7 @@ class StyleSerializerTest extends ViewTestBase {
     $node->save();
     $result = Json::decode($this->drupalGet('test/serialize/node-field', ['query' => ['_format' => 'json']]));
     $this->assertEqual($result[1]['nid'], $node->id());
-    $this->assertTrue(strpos($this->getRawContent(), "<script") === FALSE, "No script tag is present in the raw page contents.");
+    $this->assertTrue(strpos($this->getSession()->getPage()->getContent(), "<script") === FALSE, "No script tag is present in the raw page contents.");
 
     $this->drupalLogin($this->adminUser);
 
@@ -661,7 +661,7 @@ class StyleSerializerTest extends ViewTestBase {
     }
 
     // Test that multiple raw body fields are shown.
-    // Make the body field unlimited cardinatlity.
+    // Set the body field to unlimited cardinality.
     $storage_definition = $node->getFieldDefinition('body')->getFieldStorageDefinition();
     $storage_definition->setCardinality(FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED);
     $storage_definition->save();

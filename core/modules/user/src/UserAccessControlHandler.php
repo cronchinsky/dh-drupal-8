@@ -99,11 +99,9 @@ class UserAccessControlHandler extends EntityAccessControlHandler {
     $is_own_account = $items ? $items->getEntity()->id() == $account->id() : FALSE;
     switch ($field_definition->getName()) {
       case 'name':
-        // Allow view access to anyone with access to the entity. Anonymous
-        // users should be able to access the username field during the
-        // registration process, otherwise the username and email constraints
-        // are not checked.
-        if ($operation == 'view' || ($items && $account->isAnonymous() && $items->getEntity()->isAnonymous())) {
+        // Allow view access to anyone with access to the entity.
+        // The username field is editable during the registration process.
+        if ($operation == 'view' || ($items && $items->getEntity()->isAnonymous())) {
           return AccessResult::allowed()->cachePerPermissions();
         }
         // Allow edit access for the own user name if the permission is
@@ -112,7 +110,7 @@ class UserAccessControlHandler extends EntityAccessControlHandler {
           return AccessResult::allowed()->cachePerPermissions()->cachePerUser();
         }
         else {
-          return AccessResult::forbidden();
+          return AccessResult::neutral();
         }
 
       case 'preferred_langcode':
@@ -122,7 +120,7 @@ class UserAccessControlHandler extends EntityAccessControlHandler {
         // Allow view access to own mail address and other personalization
         // settings.
         if ($operation == 'view') {
-          return $is_own_account ? AccessResult::allowed()->cachePerUser() : AccessResult::forbidden();
+          return AccessResult::allowedIf($is_own_account)->cachePerUser();
         }
         // Anyone that can edit the user can also edit this field.
         return AccessResult::allowed()->cachePerPermissions();
@@ -133,14 +131,14 @@ class UserAccessControlHandler extends EntityAccessControlHandler {
 
       case 'created':
         // Allow viewing the created date, but not editing it.
-        return ($operation == 'view') ? AccessResult::allowed() : AccessResult::forbidden();
+        return ($operation == 'view') ? AccessResult::allowed() : AccessResult::neutral();
 
       case 'roles':
       case 'status':
       case 'access':
       case 'login':
       case 'init':
-        return AccessResult::forbidden();
+        return AccessResult::neutral();
     }
 
     return parent::checkFieldAccess($operation, $field_definition, $account, $items);

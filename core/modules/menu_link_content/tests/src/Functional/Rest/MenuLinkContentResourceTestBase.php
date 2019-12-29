@@ -27,7 +27,7 @@ abstract class MenuLinkContentResourceTestBase extends EntityResourceTestBase {
    * {@inheritdoc}
    */
   protected static $patchProtectedFieldNames = [
-    'changed',
+    'changed' => NULL,
   ];
 
   /**
@@ -59,7 +59,15 @@ abstract class MenuLinkContentResourceTestBase extends EntityResourceTestBase {
       'id' => 'llama',
       'title' => 'Llama Gabilondo',
       'description' => 'Llama Gabilondo',
-      'link' => 'https://nl.wikipedia.org/wiki/Llama',
+      'link' => [
+        'uri' => 'https://nl.wikipedia.org/wiki/Llama',
+        'options' => [
+          'fragment' => 'a-fragment',
+          'attributes' => [
+            'class' => ['example-class'],
+          ],
+        ],
+      ],
       'weight' => 0,
       'menu_name' => 'main',
     ]);
@@ -81,6 +89,12 @@ abstract class MenuLinkContentResourceTestBase extends EntityResourceTestBase {
       'link' => [
         [
           'uri' => 'http://www.urbandictionary.com/define.php?term=drama%20llama',
+          'options' => [
+            'fragment' => 'a-fragment',
+            'attributes' => [
+              'class' => ['example-class'],
+            ],
+          ],
         ],
       ],
       'bundle' => [
@@ -106,6 +120,11 @@ abstract class MenuLinkContentResourceTestBase extends EntityResourceTestBase {
           'value' => 1,
         ],
       ],
+      'revision_id' => [
+        [
+          'value' => 1,
+        ],
+      ],
       'title' => [
         [
           'value' => 'Llama Gabilondo',
@@ -115,7 +134,12 @@ abstract class MenuLinkContentResourceTestBase extends EntityResourceTestBase {
         [
           'uri' => 'https://nl.wikipedia.org/wiki/Llama',
           'title' => NULL,
-          'options' => [],
+          'options' => [
+            'fragment' => 'a-fragment',
+            'attributes' => [
+              'class' => ['example-class'],
+            ],
+          ],
         ],
       ],
       'weight' => [
@@ -172,6 +196,16 @@ abstract class MenuLinkContentResourceTestBase extends EntityResourceTestBase {
         ],
       ],
       'parent' => [],
+      'revision_created' => [
+        $this->formatExpectedTimestampItemValues((int) $this->entity->getRevisionCreationTime()),
+      ],
+      'revision_user' => [],
+      'revision_log_message' => [],
+      'revision_translation_affected' => [
+        [
+          'value' => TRUE,
+        ],
+      ],
     ];
   }
 

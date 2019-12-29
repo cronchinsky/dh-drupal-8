@@ -2,6 +2,8 @@
 
 namespace Drupal\file\Tests;
 
+@trigger_error('The ' . __NAMESPACE__ . '\FileFieldTestBase is deprecated in Drupal 8.5.x and will be removed before Drupal 9.0.0. Instead, use \Drupal\Tests\file\Functional\FileFieldTestBase. See https://www.drupal.org/node/2969361.', E_USER_DEPRECATED);
+
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\file\FileInterface;
@@ -57,7 +59,7 @@ abstract class FileFieldTestBase extends WebTestBase {
    * Retrieves the fid of the last inserted file.
    */
   public function getLastFileId() {
-    return (int) db_query('SELECT MAX(fid) FROM {file_managed}')->fetchField();
+    return (int) \Drupal::entityQueryAggregate('file')->aggregate('fid', 'max')->execute()[0]['fid_max'];
   }
 
   /**

@@ -12,7 +12,10 @@ use Drupal\Component\Uuid\Php;
 use Drupal\Core\Composer\Composer;
 use Drupal\Core\Asset\AttachedAssets;
 use Drupal\Core\Database\Database;
+use Drupal\Core\File\Exception\FileException;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\StreamWrapper\PublicStream;
+use Drupal\Core\Test\RunTests\TestFileParser;
 use Drupal\Core\Test\TestDatabase;
 use Drupal\Core\Test\TestRunnerKernel;
 use Drupal\simpletest\Form\SimpletestResultsForm;
@@ -60,22 +63,29 @@ if ($args['execute-test']) {
 }
 
 if ($args['list']) {
-  // Display all available tests.
+  // Display all available tests organized by one @group annotation.
   echo "\nAvailable test groups & classes\n";
   echo "-------------------------------\n\n";
   try {
-    $groups = simpletest_test_get_all($args['module']);
+    $groups = \Drupal::service('test_discovery')->getTestClasses($args['module']);
   }
   catch (Exception $e) {
     error_log((string) $e);
     echo (string) $e;
     exit(SIMPLETEST_SCRIPT_EXIT_EXCEPTION);
   }
+
+  // A given class can appear in multiple groups. For historical reasons, we
+  // need to present each test only once. The test is shown in the group that is
+  // printed first.
+  $printed_tests = [];
   foreach ($groups as $group => $tests) {
     echo $group . "\n";
-    foreach ($tests as $class => $info) {
-      echo " - $class\n";
+    $tests = array_diff(array_keys($tests), $printed_tests);
+    foreach ($tests as $test) {
+      echo " - $test\n";
     }
+    $printed_tests = array_merge($printed_tests, $tests);
   }
   exit(SIMPLETEST_SCRIPT_EXIT_SUCCESS);
 }
@@ -125,8 +135,8 @@ if ($args['clean']) {
   echo "\nEnvironment cleaned.\n";
 
   // Get the status messages and print them.
-  $messages = drupal_get_messages('status');
-  foreach ($messages['status'] as $text) {
+  $messages = \Drupal::messenger()->messagesByType('status');
+  foreach ($messages as $text) {
     echo " - " . $text . "\n";
   }
   exit(SIMPLETEST_SCRIPT_EXIT_SUCCESS);
@@ -140,7 +150,7 @@ else {
   $phpunit_version = Version::id();
 }
 if (!Composer::upgradePHPUnitCheck($phpunit_version)) {
-  simpletest_script_print_error("PHPUnit testing framework version 6 or greater is required when running on PHP 7.2 or greater. Run the command 'composer run-script drupal-phpunit-upgrade' in order to fix this.");
+  simpletest_script_print_error("PHPUnit testing framework version 6 or greater is required when running on PHP 7.0 or greater. Run the command 'composer run-script drupal-phpunit-upgrade' in order to fix this.");
   exit(SIMPLETEST_SCRIPT_EXIT_FAILURE);
 }
 
@@ -310,7 +320,12 @@ All arguments are long options.
 
   --suppress-deprecations
 
-              Stops tests from failing if deprecation errors are triggered.
+              Stops tests from failing if deprecation errors are triggered. If
+              this is not set the value specified in the
+              SYMFONY_DEPRECATIONS_HELPER environment variable, or the value
+              specified in core/phpunit.xml (if it exists), or the default value
+              will be used. The default is that any unexpected silenced
+              deprecation error will fail tests.
 
   <test1>[,<test2>[,<test3> ...]]
 
@@ -825,13 +840,6 @@ function simpletest_script_run_one_test($test_id, $test_class) {
     if ($args['suppress-deprecations']) {
       putenv('SYMFONY_DEPRECATIONS_HELPER=disabled');
     }
-    else {
-      // Prevent deprecations caused by vendor code calling deprecated code.
-      // This also prevents mock objects in PHPUnit 6 triggering silenced
-      // deprecations from breaking the test suite. We should consider changing
-      // this to 'strict' once PHPUnit 4 is no longer used.
-      putenv('SYMFONY_DEPRECATIONS_HELPER=weak_vendors');
-    }
     if (is_subclass_of($test_class, TestCase::class)) {
       $status = simpletest_script_run_phpunit($test_id, $test_class);
     }
@@ -964,8 +972,13 @@ function simpletest_script_cleanup($test_id, $test_class, $exitcode) {
     // simpletest_clean_temporary_directories() cannot be used here, since it
     // would also delete file directories of other tests that are potentially
     // running concurrently.
-    file_unmanaged_delete_recursive($test_directory, ['Drupal\simpletest\TestBase', 'filePreDeleteCallback']);
-    $messages[] = "- Removed test site directory.";
+    try {
+      \Drupal::service('file_system')->deleteRecursive($test_directory, ['Drupal\simpletest\TestBase', 'filePreDeleteCallback']);
+      $messages[] = "- Removed test site directory.";
+    }
+    catch (FileException $e) {
+      // Ignore failed deletes.
+    }
   }
 
   // Clear out all database tables from the test.
@@ -1004,11 +1017,13 @@ function simpletest_script_cleanup($test_id, $test_class, $exitcode) {
 function simpletest_script_get_test_list() {
   global $args;
 
+  /** $test_discovery \Drupal\simpletest\TestDiscovery */
+  $test_discovery = \Drupal::service('test_discovery');
   $types_processed = empty($args['types']);
   $test_list = [];
   if ($args['all'] || $args['module']) {
     try {
-      $groups = simpletest_test_get_all($args['module'], $args['types']);
+      $groups = $test_discovery->getTestClasses($args['module'], $args['types']);
       $types_processed = TRUE;
     }
     catch (Exception $e) {
@@ -1019,7 +1034,7 @@ function simpletest_script_get_test_list() {
     foreach ($groups as $group => $tests) {
       $all_tests = array_merge($all_tests, array_keys($tests));
     }
-    $test_list = $all_tests;
+    $test_list = array_unique($all_tests);
   }
   else {
     if ($args['class']) {
@@ -1031,7 +1046,7 @@ function simpletest_script_get_test_list() {
         }
         else {
           try {
-            $groups = simpletest_test_get_all(NULL, $args['types']);
+            $groups = $test_discovery->getTestClasses(NULL, $args['types']);
           }
           catch (Exception $e) {
             echo (string) $e;
@@ -1049,38 +1064,20 @@ function simpletest_script_get_test_list() {
     }
     elseif ($args['file']) {
       // Extract test case class names from specified files.
+      $parser = new TestFileParser();
       foreach ($args['test_names'] as $file) {
         if (!file_exists($file)) {
           simpletest_script_print_error('File not found: ' . $file);
           exit(SIMPLETEST_SCRIPT_EXIT_FAILURE);
         }
-        $content = file_get_contents($file);
-        // Extract a potential namespace.
-        $namespace = FALSE;
-        if (preg_match('@^namespace ([^ ;]+)@m', $content, $matches)) {
-          $namespace = $matches[1];
-        }
-        // Extract all class names.
-        // Abstract classes are excluded on purpose.
-        preg_match_all('@^class ([^ ]+)@m', $content, $matches);
-        if (!$namespace) {
-          $test_list = array_merge($test_list, $matches[1]);
-        }
-        else {
-          foreach ($matches[1] as $class_name) {
-            $namespace_class = $namespace . '\\' . $class_name;
-            if (is_subclass_of($namespace_class, '\Drupal\simpletest\TestBase') || is_subclass_of($namespace_class, TestCase::class)) {
-              $test_list[] = $namespace_class;
-            }
-          }
-        }
+        $test_list = array_merge($test_list, $parser->getTestListFromFile($file));
       }
     }
     elseif ($args['directory']) {
       // Extract test case class names from specified directory.
       // Find all tests in the PSR-X structure; Drupal\$extension\Tests\*.php
       // Since we do not want to hard-code too many structural file/directory
-      // assumptions about PSR-0/4 files and directories, we check for the
+      // assumptions about PSR-4 files and directories, we check for the
       // minimal conditions only; i.e., a '*.php' file that has '/Tests/' in
       // its path.
       // Ignore anything from third party vendors.
@@ -1107,48 +1104,34 @@ function simpletest_script_get_test_list() {
           $files[$filename] = $filename;
         }
       }
+      $parser = new TestFileParser();
       foreach ($files as $file) {
-        $content = file_get_contents($file);
-        // Extract a potential namespace.
-        $namespace = FALSE;
-        if (preg_match('@^\s*namespace ([^ ;]+)@m', $content, $matches)) {
-          $namespace = $matches[1];
-        }
-        // Extract all class names.
-        // Abstract classes are excluded on purpose.
-        preg_match_all('@^\s*class ([^ ]+)@m', $content, $matches);
-        if (!$namespace) {
-          $test_list = array_merge($test_list, $matches[1]);
-        }
-        else {
-          foreach ($matches[1] as $class_name) {
-            $namespace_class = $namespace . '\\' . $class_name;
-            if (is_subclass_of($namespace_class, '\Drupal\simpletest\TestBase') || is_subclass_of($namespace_class, TestCase::class)) {
-              $test_list[] = $namespace_class;
-            }
-          }
-        }
+        $test_list = array_merge($test_list, $parser->getTestListFromFile($file));
       }
     }
     else {
       try {
-        $groups = simpletest_test_get_all(NULL, $args['types']);
+        $groups = $test_discovery->getTestClasses(NULL, $args['types']);
         $types_processed = TRUE;
       }
       catch (Exception $e) {
         echo (string) $e;
         exit(SIMPLETEST_SCRIPT_EXIT_EXCEPTION);
       }
-      foreach ($args['test_names'] as $group_name) {
-        if (isset($groups[$group_name])) {
-          $test_list = array_merge($test_list, array_keys($groups[$group_name]));
-        }
-        else {
-          simpletest_script_print_error('Test group not found: ' . $group_name);
-          simpletest_script_print_alternatives($group_name, array_keys($groups));
-          exit(SIMPLETEST_SCRIPT_EXIT_FAILURE);
-        }
+      // Store all the groups so we can suggest alternatives if we need to.
+      $all_groups = array_keys($groups);
+      // Verify that the groups exist.
+      if (!empty($unknown_groups = array_diff($args['test_names'], $all_groups))) {
+        $first_group = reset($unknown_groups);
+        simpletest_script_print_error('Test group not found: ' . $first_group);
+        simpletest_script_print_alternatives($first_group, $all_groups);
+        exit(SIMPLETEST_SCRIPT_EXIT_FAILURE);
       }
+      // Ensure our list of tests contains only one entry for each test.
+      foreach ($args['test_names'] as $group_name) {
+        $test_list = array_merge($test_list, array_flip(array_keys($groups[$group_name])));
+      }
+      $test_list = array_flip($test_list);
     }
   }
 
@@ -1565,7 +1548,7 @@ function simpletest_script_open_browser() {
   // Ensure we have assets verbose directory - tests with no verbose output will
   // not have created one.
   $directory = PublicStream::basePath() . '/simpletest/verbose';
-  file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+  \Drupal::service('file_system')->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS);
   $php = new Php();
   $uuid = $php->generate();
   $filename = $directory . '/results-' . $uuid . '.html';

@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\image\Functional;
 
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\file\Entity\File;
@@ -43,7 +42,7 @@ class ImageFieldDefaultImagesTest extends ImageFieldTestBase {
     for ($i = 1; $i <= 10; $i++) {
       $filename = $this->randomMachineName() . "$i";
       $desired_filepath = 'public://' . $filename;
-      file_unmanaged_copy($files[0]->uri, $desired_filepath, FILE_EXISTS_ERROR);
+      \Drupal::service('file_system')->copy($files[0]->uri, $desired_filepath, FILE_EXISTS_ERROR);
       $file = File::create(['uri' => $desired_filepath, 'filename' => $filename, 'name' => $filename]);
       $file->save();
     }
@@ -369,13 +368,13 @@ class ImageFieldDefaultImagesTest extends ImageFieldTestBase {
    */
   public function testInvalidDefaultImage() {
     $field_storage = FieldStorageConfig::create([
-      'field_name' => Unicode::strtolower($this->randomMachineName()),
+      'field_name' => mb_strtolower($this->randomMachineName()),
       'entity_type' => 'node',
       'type' => 'image',
       'settings' => [
         'default_image' => [
           'uuid' => 100000,
-        ]
+        ],
       ],
     ]);
     $field_storage->save();
@@ -390,7 +389,7 @@ class ImageFieldDefaultImagesTest extends ImageFieldTestBase {
       'settings' => [
         'default_image' => [
           'uuid' => 100000,
-        ]
+        ],
       ],
     ]);
     $field->save();

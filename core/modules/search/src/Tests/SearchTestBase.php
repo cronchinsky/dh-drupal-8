@@ -2,14 +2,18 @@
 
 namespace Drupal\search\Tests;
 
+@trigger_error(__NAMESPACE__ . '\SearchTestBase is deprecated for removal before Drupal 9.0.0. Use \Drupal\Tests\search\Functional\SearchTestBase instead. See https://www.drupal.org/node/2999939', E_USER_DEPRECATED);
+
 use Drupal\simpletest\WebTestBase;
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Render\FormattableMarkup;
 
 /**
  * Defines the common search test code.
  *
  * @deprecated Scheduled for removal in Drupal 9.0.0.
  *   Use \Drupal\Tests\search\Functional\SearchTestBase instead.
+ *
+ * @see https://www.drupal.org/node/2999939
  */
 abstract class SearchTestBase extends WebTestBase {
 
@@ -85,7 +89,7 @@ abstract class SearchTestBase extends WebTestBase {
       // We have not found a form which contained all fields of $edit and
       // the submit button.
       foreach ($edit as $name => $value) {
-        $this->fail(SafeMarkup::format('Failed to set field @name to @value', ['@name' => $name, '@value' => $value]));
+        $this->fail(new FormattableMarkup('Failed to set field @name to @value', ['@name' => $name, '@value' => $value]));
       }
       $this->assertTrue($submit_matches, format_string('Found the @submit button', ['@submit' => $submit]));
       $this->fail(format_string('Found the requested form fields at @path', ['@path' => $path]));

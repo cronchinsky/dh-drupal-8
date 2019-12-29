@@ -656,7 +656,6 @@ abstract class FilterPluginBase extends HandlerBase implements CacheableDependen
     return FALSE;
   }
 
-
   /**
    * Validate the build group options form.
    */
@@ -835,7 +834,6 @@ abstract class FilterPluginBase extends HandlerBase implements CacheableDependen
     }
   }
 
-
   /**
    * Render our chunk of the exposed filter form when selecting
    *
@@ -868,14 +866,6 @@ abstract class FilterPluginBase extends HandlerBase implements CacheableDependen
       }
 
       $this->exposedTranslate($form[$value], 'value');
-
-      if (!empty($form['#type']) && ($form['#type'] == 'checkboxes' || ($form['#type'] == 'select' && !empty($form['#multiple'])))) {
-        unset($form[$value]['#default_value']);
-      }
-
-      if (!empty($form['#type']) && $form['#type'] == 'select' && empty($form['#multiple'])) {
-        $form[$value]['#default_value'] = 'All';
-      }
 
       if ($value != 'value') {
         unset($form['value']);
@@ -1105,7 +1095,7 @@ abstract class FilterPluginBase extends HandlerBase implements CacheableDependen
       '#required' => TRUE,
       '#attributes' => [
         'class' => ['default-radios'],
-      ]
+      ],
     ];
     // From all groups, let chose which is the default.
     $form['group_info']['default_group_multiple'] = [
@@ -1114,7 +1104,7 @@ abstract class FilterPluginBase extends HandlerBase implements CacheableDependen
       '#default_value' => $this->options['group_info']['default_group_multiple'],
       '#attributes' => [
         'class' => ['default-checkboxes'],
-      ]
+      ],
     ];
 
     $form['group_info']['add_group'] = [
@@ -1165,7 +1155,6 @@ abstract class FilterPluginBase extends HandlerBase implements CacheableDependen
     $form_state->get('force_build_group_options', TRUE);
   }
 
-
   /**
    * Make some translations to a form item to make it more suitable to
    * exposing.
@@ -1206,7 +1195,6 @@ abstract class FilterPluginBase extends HandlerBase implements CacheableDependen
       $form['#required'] = TRUE;
     }
   }
-
 
   /**
    * Sanitizes the HTML select element's options.

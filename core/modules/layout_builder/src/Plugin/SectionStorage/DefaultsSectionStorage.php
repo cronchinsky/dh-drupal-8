@@ -3,34 +3,41 @@
 namespace Drupal\layout_builder\Plugin\SectionStorage;
 
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Plugin\Context\Context;
-use Drupal\Core\Plugin\Context\ContextDefinition;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Plugin\Context\EntityContext;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\field_ui\FieldUI;
 use Drupal\layout_builder\DefaultsSectionStorageInterface;
-use Drupal\layout_builder\Entity\LayoutBuilderSampleEntityGenerator;
-use Drupal\layout_builder\Entity\LayoutEntityDisplayInterface;
-use Drupal\layout_builder\SectionListInterface;
+use Drupal\layout_builder\Entity\SampleEntityGeneratorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Routing\RouteCollection;
 
 /**
  * Defines the 'defaults' section storage type.
  *
+ * DefaultsSectionStorage uses a positive weight because:
+ * - It must be picked after
+ *   \Drupal\layout_builder\Plugin\SectionStorage\OverridesSectionStorage.
+ * - The default weight is 0, so other custom implementations will also take
+ *   precedence unless otherwise specified.
+ *
  * @SectionStorage(
  *   id = "defaults",
+ *   weight = 20,
+ *   context_definitions = {
+ *     "display" = @ContextDefinition("entity:entity_view_display"),
+ *   },
  * )
  *
  * @internal
- *   Layout Builder is currently experimental and should only be leveraged by
- *   experimental modules and development releases of contributed modules.
- *   See https://www.drupal.org/core/experimental for more information.
+ *   Plugin classes are internal.
  */
 class DefaultsSectionStorage extends SectionStorageBase implements ContainerFactoryPluginInterface, DefaultsSectionStorageInterface {
 
@@ -49,23 +56,16 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
   protected $entityTypeBundleInfo;
 
   /**
-   * {@inheritdoc}
-   *
-   * @var \Drupal\layout_builder\Entity\LayoutEntityDisplayInterface
-   */
-  protected $sectionList;
-
-  /**
    * The sample entity generator.
    *
-   * @var \Drupal\layout_builder\Entity\LayoutBuilderSampleEntityGenerator
+   * @var \Drupal\layout_builder\Entity\SampleEntityGeneratorInterface
    */
   protected $sampleEntityGenerator;
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, EntityTypeBundleInfoInterface $entity_type_bundle_info, LayoutBuilderSampleEntityGenerator $sample_entity_generator) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, EntityTypeBundleInfoInterface $entity_type_bundle_info, SampleEntityGeneratorInterface $sample_entity_generator) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     $this->entityTypeManager = $entity_type_manager;
@@ -90,16 +90,12 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
   /**
    * {@inheritdoc}
    */
-  public function setSectionList(SectionListInterface $section_list) {
-    if (!$section_list instanceof LayoutEntityDisplayInterface) {
-      throw new \InvalidArgumentException('Defaults expect a display-based section list');
-    }
-
-    return parent::setSectionList($section_list);
+  protected function getSectionList() {
+    return $this->getContextValue('display');
   }
 
   /**
-   * Gets the entity storing the overrides.
+   * Gets the entity storing the defaults.
    *
    * @return \Drupal\layout_builder\Entity\LayoutEntityDisplayInterface
    *   The entity storing the defaults.
@@ -125,8 +121,8 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
   /**
    * {@inheritdoc}
    */
-  public function getLayoutBuilderUrl() {
-    return Url::fromRoute("layout_builder.{$this->getStorageType()}.{$this->getDisplay()->getTargetEntityTypeId()}.view", $this->getRouteParameters());
+  public function getLayoutBuilderUrl($rel = 'view') {
+    return Url::fromRoute("layout_builder.{$this->getStorageType()}.{$this->getDisplay()->getTargetEntityTypeId()}.$rel", $this->getRouteParameters());
   }
 
   /**
@@ -153,7 +149,7 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
         continue;
       }
 
-      $path = $entity_route->getPath() . '/display-layout/{view_mode_name}';
+      $path = $entity_route->getPath() . '/display/{view_mode_name}/layout';
 
       $defaults = [];
       $defaults['entity_type_id'] = $entity_type_id;
@@ -174,7 +170,14 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
       $options = $entity_route->getOptions();
       $options['_admin_route'] = FALSE;
 
-      $this->buildLayoutRoutes($collection, $this->getPluginDefinition(), $path, $defaults, $requirements, $options, $entity_type_id);
+      $this->buildLayoutRoutes($collection, $this->getPluginDefinition(), $path, $defaults, $requirements, $options, $entity_type_id, 'entity_view_display');
+
+      // Set field_ui.route_enhancer to run on the manage layout form.
+      if (isset($defaults['bundle_key'])) {
+        $collection->get("layout_builder.defaults.$entity_type_id.view")
+          ->setOption('_field_ui', TRUE)
+          ->setDefault('bundle', '');
+      }
 
       $route_names = [
         "entity.entity_view_display.{$entity_type_id}.default",
@@ -204,7 +207,7 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
    */
   protected function getEntityTypes() {
     return array_filter($this->entityTypeManager->getDefinitions(), function (EntityTypeInterface $entity_type) {
-      return $entity_type->entityClassImplements(FieldableEntityInterface::class) && $entity_type->hasViewBuilderClass() && $entity_type->get('field_ui_base_route');
+      return $entity_type->entityClassImplements(FieldableEntityInterface::class) && $entity_type->hasHandlerClass('form', 'layout_builder') && $entity_type->hasViewBuilderClass() && $entity_type->get('field_ui_base_route');
     });
   }
 
@@ -212,6 +215,7 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
    * {@inheritdoc}
    */
   public function extractIdFromRoute($value, $definition, $name, array $defaults) {
+    @trigger_error('\Drupal\layout_builder\SectionStorageInterface::extractIdFromRoute() is deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. \Drupal\layout_builder\SectionStorageInterface::deriveContextsFromRoute() should be used instead. See https://www.drupal.org/node/3016262.', E_USER_DEPRECATED);
     if (is_string($value) && strpos($value, '.') !== FALSE) {
       return $value;
     }
@@ -231,6 +235,7 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
    * {@inheritdoc}
    */
   public function getSectionListFromId($id) {
+    @trigger_error('\Drupal\layout_builder\SectionStorageInterface::getSectionListFromId() is deprecated in Drupal 8.7.0 and will be removed before Drupal 9.0.0. The section list should be derived from context. See https://www.drupal.org/node/3016262.', E_USER_DEPRECATED);
     if (strpos($id, '.') === FALSE) {
       throw new \InvalidArgumentException(sprintf('The "%s" ID for the "%s" section storage type is invalid', $id, $this->getStorageType()));
     }
@@ -252,16 +257,74 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
   /**
    * {@inheritdoc}
    */
-  public function getContexts() {
+  public function getContextsDuringPreview() {
+    $contexts = parent::getContextsDuringPreview();
+
+    // During preview add a sample entity for the target entity type and bundle.
     $display = $this->getDisplay();
     $entity = $this->sampleEntityGenerator->get($display->getTargetEntityTypeId(), $display->getTargetBundle());
-    $context_label = new TranslatableMarkup('@entity being viewed', ['@entity' => $entity->getEntityType()->getLabel()]);
 
-    // @todo Use EntityContextDefinition after resolving
-    //   https://www.drupal.org/node/2932462.
-    $contexts = [];
-    $contexts['layout_builder.entity'] = new Context(new ContextDefinition("entity:{$entity->getEntityTypeId()}", $context_label), $entity);
+    $contexts['layout_builder.entity'] = EntityContext::fromEntity($entity);
     return $contexts;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function deriveContextsFromRoute($value, $definition, $name, array $defaults) {
+    $contexts = [];
+
+    if ($entity = $this->extractEntityFromRoute($value, $defaults)) {
+      $contexts['display'] = EntityContext::fromEntity($entity);
+    }
+    return $contexts;
+  }
+
+  /**
+   * Extracts an entity from the route values.
+   *
+   * @param mixed $value
+   *   The raw value from the route.
+   * @param array $defaults
+   *   The route defaults array.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   The entity for the route, or NULL if none exist.
+   *
+   * @see \Drupal\layout_builder\SectionStorageInterface::deriveContextsFromRoute()
+   * @see \Drupal\Core\ParamConverter\ParamConverterInterface::convert()
+   */
+  private function extractEntityFromRoute($value, array $defaults) {
+    // If a bundle is not provided but a value corresponding to the bundle key
+    // is, use that for the bundle value.
+    if (empty($defaults['bundle']) && isset($defaults['bundle_key']) && !empty($defaults[$defaults['bundle_key']])) {
+      $defaults['bundle'] = $defaults[$defaults['bundle_key']];
+    }
+
+    if (is_string($value) && strpos($value, '.') !== FALSE) {
+      list($entity_type_id, $bundle, $view_mode) = explode('.', $value, 3);
+    }
+    elseif (!empty($defaults['entity_type_id']) && !empty($defaults['bundle']) && !empty($defaults['view_mode_name'])) {
+      $entity_type_id = $defaults['entity_type_id'];
+      $bundle = $defaults['bundle'];
+      $view_mode = $defaults['view_mode_name'];
+      $value = "$entity_type_id.$bundle.$view_mode";
+    }
+    else {
+      return NULL;
+    }
+
+    $storage = $this->entityTypeManager->getStorage('entity_view_display');
+    // If the display does not exist, create a new one.
+    if (!$display = $storage->load($value)) {
+      $display = $storage->create([
+        'targetEntityType' => $entity_type_id,
+        'bundle' => $bundle,
+        'mode' => $view_mode,
+        'status' => TRUE,
+      ]);
+    }
+    return $display;
   }
 
   /**
@@ -304,6 +367,29 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
   /**
    * {@inheritdoc}
    */
+  public function isLayoutBuilderEnabled() {
+    return $this->getDisplay()->isLayoutBuilderEnabled();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function enableLayoutBuilder() {
+    $this->getDisplay()->enableLayoutBuilder();
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function disableLayoutBuilder() {
+    $this->getDisplay()->disableLayoutBuilder();
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getThirdPartySetting($module, $key, $default = NULL) {
     return $this->getDisplay()->getThirdPartySetting($module, $key, $default);
   }
@@ -328,6 +414,22 @@ class DefaultsSectionStorage extends SectionStorageBase implements ContainerFact
    */
   public function getThirdPartyProviders() {
     return $this->getDisplay()->getThirdPartyProviders();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function access($operation, AccountInterface $account = NULL, $return_as_object = FALSE) {
+    $result = AccessResult::allowedIf($this->isLayoutBuilderEnabled())->addCacheableDependency($this);
+    return $return_as_object ? $result : $result->isAllowed();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isApplicable(RefinableCacheableDependencyInterface $cacheability) {
+    $cacheability->addCacheableDependency($this);
+    return $this->isLayoutBuilderEnabled();
   }
 
 }

@@ -2,7 +2,8 @@
 
 namespace Drupal\Tests\image\Functional;
 
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Core\Url;
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\image\ImageStyleInterface;
@@ -33,7 +34,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     if (!isset($file_path)) {
       $files = $this->drupalGetTestFiles('image');
       $file = reset($files);
-      $file_path = file_unmanaged_copy($file->uri);
+      $file_path = \Drupal::service('file_system')->copy($file->uri, 'public://');
     }
 
     return $style->buildUrl($file_path) ? $file_path : FALSE;
@@ -141,7 +142,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     $this->assertEqual('bar', $style->getThirdPartySetting('image_module_test', 'foo'), 'Third party settings were added to the image style.');
 
     // Ensure that the image style URI matches our expected path.
-    $style_uri_path = $style->url();
+    $style_uri_path = $style->toUrl()->toString();
     $this->assertTrue(strpos($style_uri_path, $style_path) !== FALSE, 'The image style URI is correct.');
 
     // Confirm that all effects on the image style have settings that match
@@ -152,7 +153,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
       $uuids[$effect->getPluginId()] = $uuid;
       $effect_configuration = $effect->getConfiguration();
       foreach ($effect_edits[$effect->getPluginId()] as $field => $value) {
-        $this->assertEqual($value, $effect_configuration['data'][$field], SafeMarkup::format('The %field field in the %effect effect has the correct value of %value.', ['%field' => $field, '%effect' => $effect->getPluginId(), '%value' => $value]));
+        $this->assertEqual($value, $effect_configuration['data'][$field], new FormattableMarkup('The %field field in the %effect effect has the correct value of %value.', ['%field' => $field, '%effect' => $effect->getPluginId(), '%value' => $value]));
       }
     }
 
@@ -199,7 +200,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     $image_path = $this->createSampleImage($style);
     $this->assertEqual($this->getImageCount($style), 1, format_string('Image style %style image %file successfully generated.', ['%style' => $style->label(), '%file' => $image_path]));
 
-    $this->drupalPostForm($style_path, $edit, t('Update style'));
+    $this->drupalPostForm($style_path, $edit, t('Save'));
 
     // Note that after changing the style name, the style path is changed.
     $style_path = 'admin/config/media/image-styles/manage/' . $style_name;
@@ -291,7 +292,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
     // Confirm that the empty text is correct on the image styles page.
     $this->drupalGet($admin_path);
     $this->assertRaw(t('There are currently no styles. <a href=":url">Add a new one</a>.', [
-      ':url' => \Drupal::url('image.style_add'),
+      ':url' => Url::fromRoute('image.style_add')->toString(),
     ]));
 
   }
@@ -337,7 +338,7 @@ class ImageAdminStylesTest extends ImageFieldTestBase {
       'name' => $new_style_name,
       'label' => $new_style_label,
     ];
-    $this->drupalPostForm($style_path . $style_name, $edit, t('Update style'));
+    $this->drupalPostForm($style_path . $style_name, $edit, t('Save'));
     $this->assertText(t('Changes to the style have been saved.'), format_string('Style %name was renamed to %new_name.', ['%name' => $style_name, '%new_name' => $new_style_name]));
     $this->drupalGet('node/' . $nid);
 

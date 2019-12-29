@@ -216,7 +216,7 @@ class Migration extends PluginBase implements MigrationInterface, RequirementsIn
   protected $sourcePluginManager;
 
   /**
-   * Thep process plugin manager.
+   * The process plugin manager.
    *
    * @var \Drupal\migrate\Plugin\MigratePluginManager
    */
@@ -277,7 +277,7 @@ class Migration extends PluginBase implements MigrationInterface, RequirementsIn
     $this->destinationPluginManager = $destination_plugin_manager;
     $this->idMapPluginManager = $idmap_plugin_manager;
 
-    foreach (NestedArray::mergeDeep($plugin_definition, $configuration) as $key => $value) {
+    foreach (NestedArray::mergeDeepArray([$plugin_definition, $configuration], TRUE) as $key => $value) {
       $this->$key = $value;
     }
   }
@@ -327,6 +327,7 @@ class Migration extends PluginBase implements MigrationInterface, RequirementsIn
    * @see https://www.drupal.org/node/2873795
    */
   public function get($property) {
+    @trigger_error('\Drupal\migrate\Plugin\Migration::get() is deprecated in Drupal 8.1.x, will be removed before Drupal 9.0.x. Use more specific getters instead. See https://www.drupal.org/node/2873795', E_USER_DEPRECATED);
     return isset($this->$property) ? $this->$property : NULL;
   }
 
@@ -410,7 +411,7 @@ class Migration extends PluginBase implements MigrationInterface, RequirementsIn
    */
   public function getDestinationPlugin($stub_being_requested = FALSE) {
     if ($stub_being_requested && !empty($this->destination['no_stub'])) {
-      throw new MigrateSkipRowException();
+      throw new MigrateSkipRowException('Stub requested but not made because no_stub configuration is set.');
     }
     if (!isset($this->destinationPlugin)) {
       $this->destinationPlugin = $this->destinationPluginManager->createInstance($this->destination['plugin'], $this->destination, $this);
@@ -553,7 +554,6 @@ class Migration extends PluginBase implements MigrationInterface, RequirementsIn
     $this->{$property_name} = $value;
     return $this;
   }
-
 
   /**
    * {@inheritdoc}

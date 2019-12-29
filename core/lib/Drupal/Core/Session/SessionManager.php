@@ -216,8 +216,13 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
       throw new \InvalidArgumentException('The optional parameters $destroy and $lifetime of SessionManager::regenerate() are not supported currently');
     }
 
-    if ($this->started) {
+    if ($this->isStarted()) {
       $old_session_id = $this->getId();
+      // Save and close the old session. Call the parent method to avoid issue
+      // with session destruction due to the session being considered obsolete.
+      parent::save();
+      // Ensure the session is reloaded correctly.
+      $this->startedLazy = TRUE;
     }
     session_id(Crypt::randomBytesBase64());
 
@@ -230,10 +235,7 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
       $this->migrateStoredSession($old_session_id);
     }
 
-    if (!$this->started) {
-      // Start the session when it doesn't exist yet.
-      $this->startNow();
-    }
+    $this->startNow();
   }
 
   /**
@@ -336,21 +338,6 @@ class SessionManager extends NativeSessionStorage implements SessionManagerInter
       ->fields($fields)
       ->condition('sid', Crypt::hashBase64($old_session_id))
       ->execute();
-  }
-
-  /**
-   * Checks if the session is started.
-   *
-   * Beginning with symfony/http-foundation 3.4.24, the session will no longer
-   * save unless this method returns true. The parent method returns true if
-   * $this->started is true, but we need the session to also save if we lazy
-   * started, so we override isStarted() here.
-   *
-   * @return bool
-   *   True if started, false otherwise
-   */
-  public function isStarted() {
-    return parent::isStarted() || $this->startedLazy;
   }
 
 }

@@ -22,6 +22,7 @@ use Drupal\file\Entity\File;
  *
  * Tested hooks are:
  * - hook_entity_insert() and hook_ENTITY_TYPE_insert()
+ * - hook_entity_preload()
  * - hook_entity_load() and hook_ENTITY_TYPE_load()
  * - hook_entity_update() and hook_ENTITY_TYPE_update()
  * - hook_entity_predelete() and hook_ENTITY_TYPE_predelete()
@@ -57,7 +58,7 @@ class EntityCrudHookTest extends EntityKernelTestBase {
   /**
    * Checks the order of CRUD hook execution messages.
    *
-   * entity_crud_hook_test.module implements all core entity CRUD hooks and
+   * Module entity_crud_hook_test implements all core entity CRUD hooks and
    * stores a message for each in $GLOBALS['entity_crud_hook_test'].
    *
    * @param $messages
@@ -321,6 +322,7 @@ class EntityCrudHookTest extends EntityKernelTestBase {
     $node = Node::load($node->id());
 
     $this->assertHookMessageOrder([
+      'entity_crud_hook_test_entity_preload called for type node',
       'entity_crud_hook_test_entity_load called for type node',
       'entity_crud_hook_test_node_load called',
     ]);

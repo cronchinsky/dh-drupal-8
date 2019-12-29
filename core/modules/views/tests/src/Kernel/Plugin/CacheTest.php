@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\views\Kernel\Plugin;
 
+use Drupal\Core\Database\Database;
 use Drupal\Core\Render\RenderContext;
 use Drupal\node\Entity\Node;
 use Drupal\Tests\views\Kernel\ViewsKernelTestBase;
@@ -61,7 +62,6 @@ class CacheTest extends ViewsKernelTestBase {
     return $data;
   }
 
-
   /**
    * Tests time based caching.
    *
@@ -75,7 +75,7 @@ class CacheTest extends ViewsKernelTestBase {
       'options' => [
         'results_lifespan' => '3600',
         'output_lifespan' => '3600',
-      ]
+      ],
     ]);
 
     // Test the default (non-paged) display.
@@ -89,7 +89,7 @@ class CacheTest extends ViewsKernelTestBase {
       'age' => 29,
       'job' => 'Banjo',
     ];
-    db_insert('views_test_data')->fields($record)->execute();
+    Database::getConnection()->insert('views_test_data')->fields($record)->execute();
 
     // The result should be the same as before, because of the caching. (Note
     // that views_test_data records don't have associated cache tags, and hence
@@ -189,7 +189,7 @@ class CacheTest extends ViewsKernelTestBase {
       'options' => [
         'results_lifespan' => '3600',
         'output_lifespan' => '3600',
-      ]
+      ],
     ]);
 
     $mapping = ['views_test_data_name' => 'name'];
@@ -243,7 +243,7 @@ class CacheTest extends ViewsKernelTestBase {
       'age' => 29,
       'job' => 'Banjo',
     ];
-    db_insert('views_test_data')->fields($record)->execute();
+    Database::getConnection()->insert('views_test_data')->fields($record)->execute();
 
     // The Result changes, because the view is not cached.
     $view = Views::getView('test_cache');
@@ -272,7 +272,7 @@ class CacheTest extends ViewsKernelTestBase {
       'type' => 'time',
       'options' => [
         'output_lifespan' => '3600',
-      ]
+      ],
     ]);
 
     $output = $view->buildRenderable();
@@ -331,7 +331,7 @@ class CacheTest extends ViewsKernelTestBase {
       'options' => [
         'results_lifespan' => '3600',
         'output_lifespan' => '3600',
-      ]
+      ],
     ]);
     $this->executeView($view);
 
@@ -393,9 +393,9 @@ class CacheTest extends ViewsKernelTestBase {
     $options = [
       'default_argument_type' => 'argument_default_test',
       'default_argument_options' => [
-        'value' => 'John'
+        'value' => 'John',
       ],
-      'default_action' => 'default'
+      'default_action' => 'default',
     ];
     $view->addHandler('default', 'argument', 'views_test_data', 'name', $options);
     $view->initHandlers();

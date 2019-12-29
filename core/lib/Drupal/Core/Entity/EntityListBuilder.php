@@ -2,6 +2,7 @@
 
 namespace Drupal\Core\Entity;
 
+use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\Core\Routing\RedirectDestinationTrait;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -13,6 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class EntityListBuilder extends EntityHandlerBase implements EntityListBuilderInterface, EntityHandlerInterface {
 
+  use MessengerTrait;
   use RedirectDestinationTrait;
 
   /**
@@ -52,7 +54,7 @@ class EntityListBuilder extends EntityHandlerBase implements EntityListBuilderIn
   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
     return new static(
       $entity_type,
-      $container->get('entity.manager')->getStorage($entity_type->id())
+      $container->get('entity_type.manager')->getStorage($entity_type->id())
     );
   }
 
@@ -223,7 +225,7 @@ class EntityListBuilder extends EntityHandlerBase implements EntityListBuilderIn
       '#header' => $this->buildHeader(),
       '#title' => $this->getTitle(),
       '#rows' => [],
-      '#empty' => $this->t('There is no @label yet.', ['@label' => $this->entityType->getLabel()]),
+      '#empty' => $this->t('There are no @label yet.', ['@label' => $this->entityType->getPluralLabel()]),
       '#cache' => [
         'contexts' => $this->entityType->getListCacheContexts(),
         'tags' => $this->entityType->getListCacheTags(),

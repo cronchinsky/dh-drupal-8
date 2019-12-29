@@ -73,9 +73,11 @@ HELP
         $target = $this->resolveCode($input->getArgument('target'));
         $output->page($this->presenter->present($target, $depth, $input->getOption('all') ? Presenter::VERBOSE : 0));
 
-        if (is_object($target)) {
+        if (\is_object($target)) {
             $this->setCommandScopeVariables(new \ReflectionObject($target));
         }
+
+        return 0;
     }
 
     /**
@@ -87,7 +89,7 @@ HELP
      */
     protected function resolveTarget($name)
     {
-        @trigger_error('`resolveTarget` is deprecated; use `resolveCode` instead.', E_USER_DEPRECATED);
+        @\trigger_error('`resolveTarget` is deprecated; use `resolveCode` instead.', E_USER_DEPRECATED);
 
         return $this->resolveCode($name);
     }

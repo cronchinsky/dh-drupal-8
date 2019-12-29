@@ -7,25 +7,46 @@
 
 use Drupal\Component\Utility\Crypt;
 use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\BootstrapConfigStorageFactory;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\Core\Test\TestDatabase;
 use Drupal\Core\Session\AccountInterface;
-use Drupal\Core\Site\Settings;
 use Drupal\Core\Utility\Error;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 
 /**
- * Minimum supported version of PHP.
+ * Minimum allowed version of PHP.
  *
- * Drupal cannot be installed on versions of PHP older than this version.
+ * Below this version:
+ * - The installer cannot be run.
+ * - Updates cannot be run.
+ * - Modules and themes cannot be enabled.
+ * - If a site managed to bypass all of the above, then an error is shown in
+ *   the status report and various fatal errors occur on various pages.
+ *
+ * @see install.php
  *
  * @todo Move this to an appropriate autoloadable class. See
  *   https://www.drupal.org/project/drupal/issues/2908079
  */
 const DRUPAL_MINIMUM_PHP = '5.5.9';
+
+/**
+ * Minimum supported version of PHP.
+ *
+ * Below this version:
+ * - New sites cannot be installed, except from within tests.
+ * - Updates from previous Drupal versions can be run, but users are warned
+ *   that Drupal no longer supports that PHP version.
+ * - An error is shown in the status report that the PHP version is too old.
+ *
+ * @todo Move this to an appropriate autoloadable class. See
+ *   https://www.drupal.org/project/drupal/issues/2908079
+ */
+const DRUPAL_MINIMUM_SUPPORTED_PHP = '7.0.8';
 
 /**
  * Minimum recommended version of PHP.
@@ -37,7 +58,7 @@ const DRUPAL_MINIMUM_PHP = '5.5.9';
  * @todo Move this to an appropriate autoloadable class. See
  *   https://www.drupal.org/project/drupal/issues/2908079
  */
-const DRUPAL_RECOMMENDED_PHP = '7.1';
+const DRUPAL_RECOMMENDED_PHP = '7.2';
 
 /**
  * Minimum recommended value of PHP memory_limit.
@@ -223,10 +244,6 @@ function config_get_config_directory($type) {
  *   The filename of the requested item or NULL if the item is not found.
  */
 function drupal_get_filename($type, $name, $filename = NULL) {
-  // The location of files will not change during the request, so do not use
-  // drupal_static().
-  static $files = [];
-
   // Type 'core' only exists to simplify application-level logic; it always maps
   // to the /core directory, whereas $name is ignored. It is only requested via
   // drupal_get_path(). /core/core.info.yml does not exist, but is required
@@ -235,42 +252,30 @@ function drupal_get_filename($type, $name, $filename = NULL) {
     return 'core/core.info.yml';
   }
 
-  // Profiles are converted into modules in system_rebuild_module_data().
-  // @todo Remove false-exposure of profiles as modules.
-  if ($type == 'profile') {
-    $type = 'module';
-  }
-  if (!isset($files[$type])) {
-    $files[$type] = [];
-  }
-
-  if (isset($filename)) {
-    $files[$type][$name] = $filename;
-  }
-  elseif (!isset($files[$type][$name])) {
-    // If the pathname of the requested extension is not known, try to retrieve
-    // the list of extension pathnames from various providers, checking faster
-    // providers first.
-    // Retrieve the current module list (derived from the service container).
-    if ($type == 'module' && \Drupal::hasService('module_handler')) {
-      foreach (\Drupal::moduleHandler()->getModuleList() as $module_name => $module) {
-        $files[$type][$module_name] = $module->getPathname();
-      }
+  try {
+    /** @var \Drupal\Core\Extension\ExtensionList $extension_list */
+    $extension_list = \Drupal::service("extension.list.$type");
+    if (isset($filename)) {
+      // Manually add the info file path of an extension.
+      $extension_list->setPathname($name, $filename);
     }
-    // If still unknown, retrieve the file list prepared in state by
-    // system_rebuild_module_data() and
-    // \Drupal\Core\Extension\ThemeHandlerInterface::rebuildThemeData().
-    if (!isset($files[$type][$name]) && \Drupal::hasService('state')) {
-      $files[$type] += \Drupal::state()->get('system.' . $type . '.files', []);
-    }
-    // If still unknown, create a user-level error message.
-    if (!isset($files[$type][$name])) {
-      trigger_error(SafeMarkup::format('The following @type is missing from the file system: @name', ['@type' => $type, '@name' => $name]), E_USER_WARNING);
-    }
+    return $extension_list->getPathname($name);
   }
-
-  if (isset($files[$type][$name])) {
-    return $files[$type][$name];
+  catch (ServiceNotFoundException $e) {
+    // Catch the exception. This will result in triggering an error.
+    // If the service is unknown, create a user-level error message.
+    trigger_error(
+      sprintf('Unknown type specified: "%s". Must be one of: "core", "profile", "module", "theme", or "theme_engine".', $type),
+      E_USER_WARNING
+    );
+  }
+  catch (\InvalidArgumentException $e) {
+    // Catch the exception. This will result in triggering an error.
+    // If the filename is still unknown, create a user-level error message.
+    trigger_error(
+      sprintf('The following %s is missing from the file system: %s', $type, $name),
+      E_USER_WARNING
+    );
   }
 }
 
@@ -347,7 +352,7 @@ function t($string, array $args = [], array $options = []) {
  * @see https://www.drupal.org/node/2302363
  */
 function format_string($string, array $args) {
-  return SafeMarkup::format($string, $args);
+  return new FormattableMarkup($string, $args);
 }
 
 /**
@@ -570,14 +575,14 @@ function drupal_get_user_timezone() {
  * @param $message
  *   The error message.
  * @param $filename
- *   The filename that the error was raised in.
+ *   (optional) The filename that the error was raised in.
  * @param $line
- *   The line number the error was raised at.
+ *   (optional) The line number the error was raised at.
  * @param $context
- *   An array that points to the active symbol table at the point the error
- *   occurred.
+ *   (optional) An array that points to the active symbol table at the point the
+ *   error occurred.
  */
-function _drupal_error_handler($error_level, $message, $filename, $line, $context) {
+function _drupal_error_handler($error_level, $message, $filename = NULL, $line = NULL, $context = NULL) {
   require_once __DIR__ . '/errors.inc';
   _drupal_error_handler_real($error_level, $message, $filename, $line, $context);
 }
@@ -679,7 +684,7 @@ function drupal_valid_test_ua($new_prefix = NULL) {
     $test_hmac = Crypt::hmacBase64($check_string, $key);
     // Since we are making a local request a 600 second time window is allowed,
     // and the HMAC must match.
-    if ($time_diff >= 0 && $time_diff <= 600 && $hmac === $test_hmac) {
+    if ($time_diff >= 0 && $time_diff <= 600 && Crypt::hashEquals($test_hmac, $hmac)) {
       $test_prefix = $prefix;
     }
     else {
@@ -793,12 +798,6 @@ function drupal_get_profile() {
     }
     else {
       $profile = BootstrapConfigStorageFactory::getDatabaseStorage()->read('core.extension')['profile'];
-    }
-
-    // A BC layer just in in case this only exists in Settings. Introduced in
-    // Drupal 8.3.x and will be removed before Drupal 9.0.0.
-    if (empty($profile)) {
-      $profile = Settings::get('install_profile');
     }
   }
 
@@ -979,10 +978,10 @@ function drupal_static_reset($name = NULL) {
  * Formats text for emphasized display in a placeholder inside a sentence.
  *
  * @deprecated in Drupal 8.0.0, will be removed before Drupal 9.0.0. Use
- *   \Drupal\Component\Utility\SafeMarkup::format() or Twig's "placeholder"
- *   filter instead. Note this method should not be used to simply emphasize a
- *   string and therefore has few valid use-cases. Note also, that this method
- *   does not mark the string as safe.
+ *   \Drupal\Component\Render\FormattableMarkup or Twig's "placeholder" filter
+ *   instead. Note this method should not be used to simply emphasize a string
+ *   and therefore has few valid use-cases. Note also, that this method does not
+ *   mark the string as safe.
  *
  * @see https://www.drupal.org/node/2302363
  */
@@ -1037,8 +1036,12 @@ function _drupal_shutdown_function() {
   chdir(DRUPAL_ROOT);
 
   try {
-    foreach ($callbacks as &$callback) {
+    reset($callbacks);
+    // Do not use foreach() here because it is possible that the callback will
+    // add to the $callbacks array via drupal_register_shutdown_function().
+    while ($callback = current($callbacks)) {
       call_user_func_array($callback['callback'], $callback['arguments']);
+      next($callbacks);
     }
   }
   // PHP 7 introduces Throwable, which covers both Error and

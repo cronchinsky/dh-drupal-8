@@ -3,7 +3,7 @@
 namespace Drupal\Core\Entity;
 
 use Drupal\Component\Plugin\Definition\PluginDefinition;
-use Drupal\Component\Utility\Unicode;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\Exception\EntityTypeIdLengthException;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -15,6 +15,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
  */
 class EntityType extends PluginDefinition implements EntityTypeInterface {
 
+  use DependencySerializationTrait;
   use StringTranslationTrait;
 
   /**
@@ -178,7 +179,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * The human-readable name of the type.
    *
-   * @var string
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getLabel()
    */
@@ -187,7 +188,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * The human-readable label for a collection of entities of the type.
    *
-   * @var string
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getCollectionLabel()
    */
@@ -196,7 +197,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * The indefinite singular name of the type.
    *
-   * @var string
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getSingularLabel()
    */
@@ -205,7 +206,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   /**
    * The indefinite plural name of the type.
    *
-   * @var string
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getPluralLabel()
    */
@@ -216,7 +217,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    *
    * Needed keys: "singular" and "plural".
    *
-   * @var string[]
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
    *
    * @see \Drupal\Core\Entity\EntityTypeInterface::getCountLabel()
    */
@@ -236,6 +237,10 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
 
   /**
    * The human-readable name of the entity type group.
+   *
+   * @var string|\Drupal\Core\StringTranslation\TranslatableMarkup
+   *
+   * @see \Drupal\Core\Entity\EntityTypeInterface::getGroupLabel()
    */
   protected $group_label;
 
@@ -295,7 +300,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    */
   public function __construct($definition) {
     // Throw an exception if the entity type ID is longer than 32 characters.
-    if (Unicode::strlen($definition['id']) > static::ID_MAX_LENGTH) {
+    if (mb_strlen($definition['id']) > static::ID_MAX_LENGTH) {
       throw new EntityTypeIdLengthException('Attempt to create an entity type with an ID longer than ' . static::ID_MAX_LENGTH . " characters: {$definition['id']}.");
     }
 
@@ -768,7 +773,7 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
    * {@inheritdoc}
    */
   public function getLowercaseLabel() {
-    return Unicode::strtolower($this->getLabel());
+    return mb_strtolower($this->getLabel());
   }
 
   /**
@@ -836,7 +841,6 @@ class EntityType extends PluginDefinition implements EntityTypeInterface {
   public function getGroup() {
     return $this->group;
   }
-
 
   /**
    * {@inheritdoc}

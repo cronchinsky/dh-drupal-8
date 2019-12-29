@@ -4,9 +4,10 @@ namespace Drupal\Tests\taxonomy\Kernel\Views;
 
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Language\LanguageInterface;
-use Drupal\field\Tests\EntityReference\EntityReferenceTestTrait;
+use Drupal\Tests\field\Traits\EntityReferenceTestTrait;
 use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\Tests\views\Kernel\ViewsKernelTestBase;
 use Drupal\views\Tests\ViewTestData;
 use Drupal\taxonomy\Entity\Vocabulary;
@@ -18,6 +19,7 @@ use Drupal\taxonomy\Entity\Term;
 abstract class TaxonomyTestBase extends ViewsKernelTestBase {
 
   use EntityReferenceTestTrait;
+  use UserCreationTrait;
 
   use NodeCreationTrait {
     createNode as drupalCreateNode;
@@ -76,6 +78,7 @@ abstract class TaxonomyTestBase extends ViewsKernelTestBase {
     parent::setUp($import_test_views);
 
     // Install node config to create body field.
+    $this->installEntitySchema('node');
     $this->installConfig(['node', 'filter']);
     $this->installEntitySchema('user');
     $this->installEntitySchema('taxonomy_term');

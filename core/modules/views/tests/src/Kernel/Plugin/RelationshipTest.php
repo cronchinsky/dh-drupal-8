@@ -2,7 +2,7 @@
 
 namespace Drupal\Tests\views\Kernel\Plugin;
 
-use Drupal\simpletest\UserCreationTrait;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\views\Views;
 
 /**
@@ -78,8 +78,8 @@ class RelationshipTest extends RelationshipJoinTestBase {
     $expected_result = [
       [
         'name' => 'John',
-        'uid' => 1
-      ]
+        'uid' => 1,
+      ],
     ];
     $this->assertIdenticalResultset($view, $expected_result, $this->columnMap);
     $view->destroy();
@@ -101,8 +101,8 @@ class RelationshipTest extends RelationshipJoinTestBase {
     $expected_result = [
       [
         'name' => 'John',
-        'uid' => 1
-      ]
+        'uid' => 1,
+      ],
     ];
     $this->assertIdenticalResultset($view, $expected_result, $this->columnMap);
     $view->destroy();
@@ -170,8 +170,8 @@ class RelationshipTest extends RelationshipJoinTestBase {
 
     // Check that the output contains correct values.
     $xpath = '//div[@class="views-row" and div[@class="views-field views-field-id"]=:id and div[@class="views-field views-field-author"]=:author]';
-    $this->assertEqual(1, count($this->xpath($xpath, [':id' => 1, ':author' => $author1->getUsername()])));
-    $this->assertEqual(1, count($this->xpath($xpath, [':id' => 2, ':author' => $author2->getUsername()])));
+    $this->assertEqual(1, count($this->xpath($xpath, [':id' => 1, ':author' => $author1->getAccountName()])));
+    $this->assertEqual(1, count($this->xpath($xpath, [':id' => 2, ':author' => $author2->getAccountName()])));
     $this->assertEqual(1, count($this->xpath($xpath, [':id' => 3, ':author' => ''])));
   }
 

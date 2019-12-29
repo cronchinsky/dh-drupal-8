@@ -3,6 +3,8 @@
 namespace Drupal\pager_test\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Database\Database;
+use Drupal\Core\Database\Query\PagerSelectExtender;
 
 /**
  * Controller routine for testing the pager.
@@ -26,7 +28,7 @@ class PagerTestController extends ControllerBase {
       ['data' => 'type'],
       ['data' => 'timestamp'],
     ];
-    $query = db_select('watchdog', 'd')->extend('Drupal\Core\Database\Query\PagerSelectExtender')->element($element);
+    $query = Database::getConnection()->select('watchdog', 'd')->extend(PagerSelectExtender::class)->element($element);
     $result = $query
       ->fields('d', ['wid', 'type', 'timestamp'])
       ->limit($limit)
@@ -69,7 +71,7 @@ class PagerTestController extends ControllerBase {
       ],
       '#pre_render' => [
         'Drupal\pager_test\Controller\PagerTestController::showPagerCacheContext',
-      ]
+      ],
     ];
 
     return $build;
@@ -118,7 +120,7 @@ class PagerTestController extends ControllerBase {
    * #pre_render callback for #type => pager that shows the pager cache context.
    */
   public static function showPagerCacheContext(array $pager) {
-    drupal_set_message(\Drupal::service('cache_contexts_manager')->convertTokensToKeys(['url.query_args.pagers:' . $pager['#element']])->getKeys()[0]);
+    \Drupal::messenger()->addStatus(\Drupal::service('cache_contexts_manager')->convertTokensToKeys(['url.query_args.pagers:' . $pager['#element']])->getKeys()[0]);
     return $pager;
   }
 

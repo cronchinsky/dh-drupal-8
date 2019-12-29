@@ -151,16 +151,16 @@ class AccountSettingsForm extends ConfigFormBase {
       '#title' => $this->t('Who can register accounts?'),
       '#default_value' => $config->get('register'),
       '#options' => [
-        USER_REGISTER_ADMINISTRATORS_ONLY => $this->t('Administrators only'),
-        USER_REGISTER_VISITORS => $this->t('Visitors'),
-        USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL => $this->t('Visitors, but administrator approval is required'),
-      ]
+        UserInterface::REGISTER_ADMINISTRATORS_ONLY => $this->t('Administrators only'),
+        UserInterface::REGISTER_VISITORS => $this->t('Visitors'),
+        UserInterface::REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL => $this->t('Visitors, but administrator approval is required'),
+      ],
     ];
     $form['registration_cancellation']['user_email_verification'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Require email verification when a visitor creates an account'),
       '#default_value' => $config->get('verify_mail'),
-      '#description' => $this->t('New users will be required to validate their email address prior to logging into the site, and will be assigned a system-generated password. With this setting disabled, users will be logged in immediately upon registering, and may select their own passwords during registration.')
+      '#description' => $this->t('New users will be required to validate their email address prior to logging into the site, and will be assigned a system-generated password. With this setting disabled, users will be logged in immediately upon registering, and may select their own passwords during registration.'),
     ];
     $form['registration_cancellation']['user_password_strength'] = [
       '#type' => 'checkbox',
@@ -203,7 +203,7 @@ class AccountSettingsForm extends ConfigFormBase {
     $form['email_admin_created'] = [
       '#type' => 'details',
       '#title' => $this->t('Welcome (new user created by administrator)'),
-      '#open' => $config->get('register') == USER_REGISTER_ADMINISTRATORS_ONLY,
+      '#open' => $config->get('register') == UserInterface::REGISTER_ADMINISTRATORS_ONLY,
       '#description' => $this->t('Edit the welcome email messages sent to new member accounts created by an administrator.') . ' ' . $email_token_help,
       '#group' => 'email',
     ];
@@ -223,7 +223,7 @@ class AccountSettingsForm extends ConfigFormBase {
     $form['email_pending_approval'] = [
       '#type' => 'details',
       '#title' => $this->t('Welcome (awaiting approval)'),
-      '#open' => $config->get('register') == USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL,
+      '#open' => $config->get('register') == UserInterface::REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL,
       '#description' => $this->t('Edit the welcome email messages sent to new members upon registering, when administrative approval is required.') . ' ' . $email_token_help,
       '#group' => 'email',
     ];
@@ -243,7 +243,7 @@ class AccountSettingsForm extends ConfigFormBase {
     $form['email_pending_approval_admin'] = [
       '#type' => 'details',
       '#title' => $this->t('Admin (user awaiting approval)'),
-      '#open' => $config->get('register') == USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL,
+      '#open' => $config->get('register') == UserInterface::REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL,
       '#description' => $this->t('Edit the email notifying the site administrator that there are new members awaiting administrative approval.') . ' ' . $email_token_help,
       '#group' => 'email',
     ];
@@ -263,7 +263,7 @@ class AccountSettingsForm extends ConfigFormBase {
     $form['email_no_approval_required'] = [
       '#type' => 'details',
       '#title' => $this->t('Welcome (no approval required)'),
-      '#open' => $config->get('register') == USER_REGISTER_VISITORS,
+      '#open' => $config->get('register') == UserInterface::REGISTER_VISITORS,
       '#description' => $this->t('Edit the welcome email messages sent to new members upon registering, when no administrator approval is required.') . ' ' . $email_token_help,
       '#group' => 'email',
     ];

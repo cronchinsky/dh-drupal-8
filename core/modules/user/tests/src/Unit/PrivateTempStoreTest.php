@@ -96,7 +96,6 @@ class PrivateTempStoreTest extends UnitTestCase {
     $this->otherObject->owner = 2;
   }
 
-
   /**
    * Tests the get() method.
    *
@@ -190,7 +189,7 @@ class PrivateTempStoreTest extends UnitTestCase {
       ->will($this->returnValue(FALSE));
 
     $metadata = $this->tempStore->getMetadata('test');
-    $this->assertObjectHasAttribute('owner', $metadata);
+    $this->assertObjectHasAttribute('updated', $metadata);
     // Data should get removed.
     $this->assertObjectNotHasAttribute('data', $metadata);
 

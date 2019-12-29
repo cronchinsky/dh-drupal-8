@@ -65,7 +65,7 @@ function content_translation_field_sync_widget(FieldDefinitionInterface $field, 
       // does not get lost.
       $element[key($options)]['#attached']['drupalSettings']['contentTranslationDependentOptions'] = [
         'dependent_selectors' => [
-          $element_name => $require_all_groups_for_translation
+          $element_name => $require_all_groups_for_translation,
         ],
       ];
       $element[key($options)]['#attached']['library'][] = 'content_translation/drupal.content_translation.admin';
@@ -164,6 +164,7 @@ function _content_translation_form_language_content_settings_form_alter(array &$
   $form['#validate'][] = 'content_translation_form_language_content_settings_validate';
   $form['#submit'][] = 'content_translation_form_language_content_settings_submit';
 }
+
 /**
  * Checks whether translatability should be configurable for a field.
  *
@@ -181,8 +182,7 @@ function _content_translation_is_field_translatability_configurable(EntityTypeIn
   // Allow to configure only fields supporting multilingual storage. We skip our
   // own fields as they are always translatable. Additionally we skip a set of
   // well-known fields implementing entity system business logic.
-  return
-    $definition->isTranslatable() &&
+  return $definition->isTranslatable() &&
     $definition->getProvider() != 'content_translation' &&
     !in_array($definition->getName(), [$entity_type->getKey('langcode'), $entity_type->getKey('default_langcode'), 'revision_translation_affected']);
 }
@@ -255,6 +255,7 @@ function _content_translation_preprocess_language_content_settings_table(&$varia
             'class' => ['operations'],
           ],
         ],
+        '#field_name' => $field_name,
         'class' => ['field-settings'],
       ];
 
@@ -399,6 +400,6 @@ function content_translation_form_language_content_settings_submit(array $form, 
   }
 
   // Ensure entity and menu router information are correctly rebuilt.
-  \Drupal::entityManager()->clearCachedDefinitions();
+  \Drupal::entityTypeManager()->clearCachedDefinitions();
   \Drupal::service('router.builder')->setRebuildNeeded();
 }

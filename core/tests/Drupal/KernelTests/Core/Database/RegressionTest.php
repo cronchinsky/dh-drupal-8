@@ -22,7 +22,8 @@ class RegressionTest extends DatabaseTestBase {
   public function testRegression_310447() {
     // That's a 255 character UTF-8 string.
     $job = str_repeat("é", 255);
-    db_insert('test')
+    $this->connection
+      ->insert('test')
       ->fields([
         'name' => $this->randomMachineName(),
         'age' => 20,
@@ -37,24 +38,25 @@ class RegressionTest extends DatabaseTestBase {
    * Tests the db_table_exists() function.
    */
   public function testDBTableExists() {
-    $this->assertSame(TRUE, db_table_exists('test'), 'Returns true for existent table.');
-    $this->assertSame(FALSE, db_table_exists('nosuchtable'), 'Returns false for nonexistent table.');
+    $this->assertSame(TRUE, $this->connection->schema()->tableExists('test'), 'Returns true for existent table.');
+    $this->assertSame(FALSE, $this->connection->schema()->tableExists('nosuchtable'), 'Returns false for nonexistent table.');
   }
 
   /**
-   * Tests the db_field_exists() function.
+   * Tests the \Drupal\Core\Database\Schema::fieldExists() method.
    */
   public function testDBFieldExists() {
-    $this->assertSame(TRUE, db_field_exists('test', 'name'), 'Returns true for existent column.');
-    $this->assertSame(FALSE, db_field_exists('test', 'nosuchcolumn'), 'Returns false for nonexistent column.');
+    $schema = $this->connection->schema();
+    $this->assertSame(TRUE, $schema->fieldExists('test', 'name'), 'Returns true for existent column.');
+    $this->assertSame(FALSE, $schema->fieldExists('test', 'nosuchcolumn'), 'Returns false for nonexistent column.');
   }
 
   /**
-   * Tests the db_index_exists() function.
+   * Tests the Schema::indexExists() method.
    */
   public function testDBIndexExists() {
-    $this->assertSame(TRUE, db_index_exists('test', 'ages'), 'Returns true for existent index.');
-    $this->assertSame(FALSE, db_index_exists('test', 'nosuchindex'), 'Returns false for nonexistent index.');
+    $this->assertSame(TRUE, $this->connection->schema()->indexExists('test', 'ages'), 'Returns true for existent index.');
+    $this->assertSame(FALSE, $this->connection->schema()->indexExists('test', 'nosuchindex'), 'Returns false for nonexistent index.');
   }
 
 }

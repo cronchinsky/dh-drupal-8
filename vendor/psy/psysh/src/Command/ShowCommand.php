@@ -18,7 +18,6 @@ use Psy\Exception\RuntimeException;
 use Psy\Formatter\CodeFormatter;
 use Psy\Formatter\SignatureFormatter;
 use Psy\Input\CodeArgument;
-use Psy\Output\ShellOutput;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -99,11 +98,15 @@ HELP
                 throw new \InvalidArgumentException('Too many arguments (supply either "target" or "--ex")');
             }
 
-            return $this->writeExceptionContext($input, $output);
+            $this->writeExceptionContext($input, $output);
+
+            return 0;
         }
 
         if ($input->getArgument('target')) {
-            return $this->writeCodeContext($input, $output);
+            $this->writeCodeContext($input, $output);
+
+            return 0;
         }
 
         throw new RuntimeException('Not enough arguments (missing: "target")');
@@ -117,7 +120,7 @@ HELP
         $this->setCommandScopeVariables($reflector);
 
         try {
-            $output->page(CodeFormatter::format($reflector, $this->colorMode), ShellOutput::OUTPUT_RAW);
+            $output->page(CodeFormatter::format($reflector, $this->colorMode), OutputInterface::OUTPUT_RAW);
         } catch (RuntimeException $e) {
             $output->writeln(SignatureFormatter::format($reflector));
             throw $e;
@@ -140,16 +143,16 @@ HELP
                 $index = 0;
             }
         } else {
-            $index = max(0, intval($input->getOption('ex')) - 1);
+            $index = \max(0, \intval($input->getOption('ex')) - 1);
         }
 
         $trace = $exception->getTrace();
-        array_unshift($trace, [
+        \array_unshift($trace, [
             'file' => $exception->getFile(),
             'line' => $exception->getLine(),
         ]);
 
-        if ($index >= count($trace)) {
+        if ($index >= \count($trace)) {
             $index = 0;
         }
 
@@ -169,25 +172,25 @@ HELP
         $file = isset($trace[$index]['file']) ? $this->replaceCwd($trace[$index]['file']) : 'n/a';
         $line = isset($trace[$index]['line']) ? $trace[$index]['line'] : 'n/a';
 
-        $output->writeln(sprintf(
+        $output->writeln(\sprintf(
             'From <info>%s:%d</info> at <strong>level %d</strong> of backtrace (of %d).',
             OutputFormatter::escape($file),
             OutputFormatter::escape($line),
             $index + 1,
-            count($trace)
+            \count($trace)
         ));
     }
 
     private function replaceCwd($file)
     {
-        if ($cwd = getcwd()) {
-            $cwd = rtrim($cwd, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if ($cwd = \getcwd()) {
+            $cwd = \rtrim($cwd, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
         }
 
         if ($cwd === false) {
             return $file;
         } else {
-            return preg_replace('/^' . preg_quote($cwd, '/') . '/', '', $file);
+            return \preg_replace('/^' . \preg_quote($cwd, '/') . '/', '', $file);
         }
     }
 
@@ -208,15 +211,15 @@ HELP
             $line = $trace[$index]['line'];
         }
 
-        if (is_file($file)) {
-            $code = @file_get_contents($file);
+        if (\is_file($file)) {
+            $code = @\file_get_contents($file);
         }
 
         if (empty($code)) {
             return;
         }
 
-        $output->write($this->getHighlighter()->getCodeSnippet($code, $line, 5, 5), ShellOutput::OUTPUT_RAW);
+        $output->write($this->getHighlighter()->getCodeSnippet($code, $line, 5, 5), false, OutputInterface::OUTPUT_RAW);
     }
 
     private function getHighlighter()
@@ -268,12 +271,12 @@ HELP
                 $line = $context['line'];
             }
 
-            if (is_file($file)) {
+            if (\is_file($file)) {
                 $vars['__file'] = $file;
                 if (isset($line)) {
                     $vars['__line'] = $line;
                 }
-                $vars['__dir'] = dirname($file);
+                $vars['__dir'] = \dirname($file);
             }
         }
 
@@ -282,7 +285,7 @@ HELP
 
     private function extractEvalFileAndLine($file)
     {
-        if (preg_match('/(.*)\\((\\d+)\\) : eval\\(\\)\'d code$/', $file, $matches)) {
+        if (\preg_match('/(.*)\\((\\d+)\\) : eval\\(\\)\'d code$/', $file, $matches)) {
             return [$matches[1], $matches[2]];
         }
     }
