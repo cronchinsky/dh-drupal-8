@@ -37,7 +37,8 @@
         "drupal/views_advanced_routing": "^1.0",
         "drupal/jssor": "^1.0",
         "drupal/profile": "^1.0",
-        "drupal/rabbit_hole": "^1.0"
+        "drupal/rabbit_hole": "^1.0",
+        "drupal/simple_gmap": "^2.0"
     },
     "conflict": {
         "symfony/dom-crawler": ">=4"
