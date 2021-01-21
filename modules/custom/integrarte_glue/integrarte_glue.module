@@ -122,9 +122,9 @@ function integrarte_glue_entity_insert(Drupal\Core\Entity\EntityInterface $entit
 
 	switch ($entity->bundle()) {
 		case 'application':	
-			$allowed_values = $entity->getFieldDefinition('field_dates_of_attendance_2018')->getFieldStorageDefinition()->getSetting('allowed_values');
+			$allowed_values = $entity->getFieldDefinition('field_dates_of_attendance_2021')->getFieldStorageDefinition()->getSetting('allowed_values');
 			$weeks = array();
-		  $weeks = $entity->get('field_dates_of_attendance_2018')->getValue();
+		  $weeks = $entity->get('field_dates_of_attendance_2021')->getValue();
       $attendance  = '';
       $first = true;
       foreach($weeks as $week){
