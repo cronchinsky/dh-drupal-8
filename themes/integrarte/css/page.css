@@ -1029,3 +1029,7 @@ article.node--type-class-type {
 #content_field_date_on_calendar-2016-12-17-0 div.inner div.item:first-child  .datetime {
 	display: none;
 }
+
+#block-coronavirus > h2 {
+	display: none;
+}
